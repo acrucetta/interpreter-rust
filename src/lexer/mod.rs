@@ -36,6 +36,8 @@ pub mod lexer {
         pub fn next_token(&mut self) -> Token {
             let tok: Token;
 
+            self.skip_whitespace();
+
             match self.ch {
                 '=' => tok = Token::new(token::token::ASSIGN, self.ch),
                 ';' => tok = Token::new(token::token::SEMICOLON, self.ch),
@@ -45,13 +47,44 @@ pub mod lexer {
                 '+' => tok = Token::new(token::token::PLUS, self.ch),
                 '{' => tok = Token::new(token::token::LBRACE, self.ch),
                 '}' => tok = Token::new(token::token::RBRACE, self.ch),
-                '\0' => tok = Token::new(token::token::EOF, self.ch),
-                _ => tok = Token::new(token::token::ILLEGAL, self.ch),
+                _ => {
+                    if is_letter(self.ch) {
+                        let literal = self.read_identifier();
+                        let kind = token::token::lookup_ident(&literal.to_string());
+                        return Token::new(kind, literal);
+                    } else if is_digit(self.ch) {
+                        return Token::new(token::token::INT, self.ch);
+                    } else {
+                        tok = Token::new(token::token::ILLEGAL, self.ch);
+                        return tok;
+                    }
+                }
             }
-
             self.read_char();
             return tok;
         }
+
+        fn read_identifier(&mut self) -> char {
+            let position = self.position;
+            while is_letter(self.ch) {
+                self.read_char();
+            }
+            return self.input.chars().nth(position).unwrap();
+        }
+
+        fn skip_whitespace(&mut self) -> () {
+            while self.ch == ' ' || self.ch == '\t' || self.ch == '\n' || self.ch == '\r' {
+                self.read_char();
+            }
+        }
+    }
+
+    fn is_digit(ch: char) -> bool {
+        return '0' <= ch && ch <= '9';
+    }
+
+    fn is_letter(ch: char) -> bool {
+        return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_';
     }
 }
 
@@ -83,15 +116,14 @@ mod lexer_tests {
             let tok = l.next_token();
 
             assert_eq!(tok.kind, expected_kind);
-            assert_eq!(tok.value, expected_literal);
+            assert_eq!(tok.literal, expected_literal);
         }
     }
 
     /// .
     #[test]
     fn test_next_token_function() {
-        let input = "
-            let five = 5;";
+        let input = "let five = 5;";
 
         let tests: Vec<(TokenType, String)> = vec![
             (token::token::LET, "let".to_string()),
@@ -107,7 +139,7 @@ mod lexer_tests {
             let tok = l.next_token();
 
             assert_eq!(tok.kind, expected_kind);
-            assert_eq!(tok.value, expected_literal);
+            assert_eq!(tok.literal, expected_literal);
         }
     }
 }

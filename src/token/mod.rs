@@ -4,20 +4,28 @@ pub mod token {
 
     pub struct Token {
         pub kind: TokenType<'static>,
-        pub value: String,
+        pub literal: String,
     }
 
     impl Token {
-        pub fn new(kind: TokenType<'static>, value: char) -> Token {
+        pub fn new(kind: TokenType<'static>, literal: char) -> Token {
             Token {
                 kind,
-                value: value.to_string(),
+                literal: literal.to_string(),
             }
         }
     }
 
+    pub fn lookup_ident(ident: &str) -> TokenType<'static> {
+        match ident {
+            "fn" => FUNCTION,
+            "let" => LET,
+            _ => IDENT,
+        }
+    }
+
     pub const ILLEGAL: &str = "ILLEGAL";
-    pub const EOF: &str = "EOF";
+    pub const EOF: &str = "";
     // Identifiers + literals
     pub const IDENT: &str = "IDENT"; // add, foobar, x, y, ...
     pub const INT: &str = "INT"; // 1343456
