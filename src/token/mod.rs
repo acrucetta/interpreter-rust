@@ -1,16 +1,16 @@
 pub mod token {
 
-    pub(crate) type TokenType<'a> = &'a str;
+    pub type TokenType<'a> = &'a str;
 
-    pub(crate) struct Token {
+    pub struct Token {
         pub kind: TokenType<'static>,
         pub value: String,
     }
 
     impl Token {
-        pub(crate) fn new(kind: TokenType<'static>, value: u8) -> Token {
+        pub fn new(kind: TokenType<'static>, value: char) -> Token {
             Token {
-                kind: kind,
+                kind,
                 value: value.to_string(),
             }
         }

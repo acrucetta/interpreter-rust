@@ -4,10 +4,10 @@ pub mod lexer {
     use crate::token::token::Token;
 
     pub struct Lexer {
-        input: String,
-        position: usize,
-        read_position: usize,
-        ch: u8,
+        pub input: String,
+        pub position: usize,
+        pub read_position: usize,
+        pub ch: char,
     }
 
     impl Lexer {
@@ -16,18 +16,18 @@ pub mod lexer {
                 input: input,
                 position: 0,
                 read_position: 0,
-                ch: 0,
+                ch: 0 as char,
             };
             l.read_char();
 
             return l;
         }
 
-        fn read_char(&mut self) {
+        pub fn read_char(&mut self) {
             if self.read_position >= self.input.len() {
-                self.ch = 0;
+                self.ch = 0 as char;
             } else {
-                self.ch = self.input.as_bytes()[self.read_position];
+                self.ch = self.input.chars().nth(self.read_position).unwrap();
             }
             self.position = self.read_position;
             self.read_position += 1;
@@ -37,17 +37,18 @@ pub mod lexer {
             let tok: Token;
 
             match self.ch {
-                b'=' => tok = Token::new(token::token::ASSIGN, self.ch),
-                b';' => tok = Token::new(token::token::SEMICOLON, self.ch),
-                b'(' => tok = Token::new(token::token::LPAREN, self.ch),
-                b')' => tok = Token::new(token::token::RPAREN, self.ch),
-                b',' => tok = Token::new(token::token::COMMA, self.ch),
-                b'+' => tok = Token::new(token::token::PLUS, self.ch),
-                b'{' => tok = Token::new(token::token::LBRACE, self.ch),
-                b'}' => tok = Token::new(token::token::RBRACE, self.ch),
-                b'\0' => tok = Token::new(token::token::EOF, self.ch),
+                '=' => tok = Token::new(token::token::ASSIGN, self.ch),
+                ';' => tok = Token::new(token::token::SEMICOLON, self.ch),
+                '(' => tok = Token::new(token::token::LPAREN, self.ch),
+                ')' => tok = Token::new(token::token::RPAREN, self.ch),
+                ',' => tok = Token::new(token::token::COMMA, self.ch),
+                '+' => tok = Token::new(token::token::PLUS, self.ch),
+                '{' => tok = Token::new(token::token::LBRACE, self.ch),
+                '}' => tok = Token::new(token::token::RBRACE, self.ch),
+                '\0' => tok = Token::new(token::token::EOF, self.ch),
                 _ => tok = Token::new(token::token::ILLEGAL, self.ch),
             }
+
             self.read_char();
             return tok;
         }
