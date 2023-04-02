@@ -8,10 +8,10 @@ pub mod token {
     }
 
     impl Token {
-        pub fn new(kind: TokenType<'static>, literal: char) -> Token {
+        pub fn new(kind: TokenType<'static>, literal: String) -> Token {
             Token {
                 kind,
-                literal: literal.to_string(),
+                literal: literal,
             }
         }
     }
@@ -20,6 +20,11 @@ pub mod token {
         match ident {
             "fn" => FUNCTION,
             "let" => LET,
+            "true" => TRUE,
+            "false" => FALSE,
+            "if" => IF,
+            "else" => ELSE,
+            "return" => RETURN,
             _ => IDENT,
         }
     }
@@ -33,6 +38,16 @@ pub mod token {
     // Operators
     pub const ASSIGN: &str = "=";
     pub const PLUS: &str = "+";
+    pub const MINUS: &str = "-";
+    pub const BANG: &str = "!";
+    pub const ASTERISK: &str = "*";
+    pub const SLASH: &str = "/";
+
+    pub const NOT_EQ: &str = "!=";
+    pub const EQ: &str = "==";
+
+    pub const LT: &str = "<";
+    pub const GT: &str = ">";
 
     // Delimiters
     pub const COMMA: &str = ",";
@@ -45,4 +60,9 @@ pub mod token {
     // Keywords
     pub const FUNCTION: &str = "FUNCTION";
     pub const LET: &str = "LET";
+    pub const TRUE: &str = "TRUE";
+    pub const FALSE: &str = "FALSE";
+    pub const IF: &str = "IF";
+    pub const ELSE: &str = "ELSE";
+    pub const RETURN: &str = "RETURN";
 }
