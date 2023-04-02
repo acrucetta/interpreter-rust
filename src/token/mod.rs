@@ -1,8 +1,12 @@
 pub mod token {
 
+    use serde::{Deserialize, Serialize};
+    use std::fmt;
+    use std::fmt::Formatter;
+
     pub type TokenType<'a> = &'a str;
 
-    #[derive(Debug, PartialEq, Clone)]
+    #[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
     pub struct Token {
         pub kind: TokenType<'static>,
         pub literal: String,
