@@ -1,25 +1,28 @@
-mod lexer;
-mod token;
-
 pub mod repl {
 
-    use crate::lexer::Lexer;
-    use crate::token::token::Token;
+    use crate::lexer::lexer::Lexer;
+    use crate::token::token::{self, Token};
+    use std::io::{BufRead, Write};
 
     pub const PROMPT: &str = ">> ";
 
-    pub fn start() {
-        let mut input = String::new();
+    pub fn start(reader: &mut dyn BufRead, writer: &mut dyn Write) {
         loop {
+            let mut line = String::new();
             print!("{}", PROMPT);
-            std::io::stdin().read_line(&mut input).unwrap();
-            let mut lexer = Lexer::new(input.clone());
-            let mut token = lexer.next_token();
-            while token.kind != token::EOF {
-                println!("{:?}", token);
-                token = lexer.next_token();
+            writer.flush().unwrap();
+
+            if reader.read_line(&mut line).unwrap() == 0 {
+                break;
             }
-            input.clear();
+            let mut l = Lexer::new(line);
+            loop {
+                let tok = l.next_token();
+                println!("{:?}", tok);
+                if tok.kind == token::EOF {
+                    break;
+                }
+            }
         }
     }
 }

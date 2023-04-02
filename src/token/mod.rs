@@ -2,6 +2,7 @@ pub mod token {
 
     pub type TokenType<'a> = &'a str;
 
+    #[derive(Debug, PartialEq)]
     pub struct Token {
         pub kind: TokenType<'static>,
         pub literal: String,
