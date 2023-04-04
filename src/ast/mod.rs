@@ -3,7 +3,7 @@ pub mod ast {
     use core::fmt;
     use std::any::Any;
 
-    use crate::token::token::{Token, TokenType};
+    use crate::token::token::{Token, IDENT};
     use serde::{Deserialize, Serialize};
     use std::fmt::Formatter;
 
@@ -135,7 +135,7 @@ pub mod ast {
 
         pub fn new(to_string: String) -> Identifier {
             Identifier {
-                token: Token::new(TokenType::IDENT, to_string.clone()),
+                token: Token::new(IDENT, to_string.clone()),
                 value: to_string,
             }
         }

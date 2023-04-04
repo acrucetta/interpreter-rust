@@ -2,7 +2,7 @@ pub mod parser {
     use crate::ast::ast;
     use crate::lexer::lexer::Lexer;
     use crate::token;
-    use crate::token::token::{Token, TokenType};
+    use crate::token::token::Token;
 
     pub struct Parser {
         l: Lexer,
