@@ -22,13 +22,13 @@ pub mod parser {
             p
         }
 
-        fn next_token(&self) {
+        fn next_token(&mut self) {
             self.cur_token = self.peek_token.clone();
             self.peek_token = self.l.next_token();
         }
 
         pub fn parse_program(&self) -> ast::Program {
-            return ast::Program::new();
+            todo!()
         }
     }
 }
@@ -69,31 +69,29 @@ mod tests {
         };
 
         for (i, tt) in tests.iter().enumerate() {
-            let stmt = program.statements[i];
-            let stmt = stmt.clone();
-
+            let stmt = &program.statements[i];
+            let stmt = Box::new(stmt);
             assert!(test_let_statement(stmt, tt.value.clone()));
         }
     }
 
-    fn test_let_statement(statement: Box<Statement>, name: String) -> bool {
+    fn test_let_statement(statement: Box<&Statement>, name: String) -> bool {
         if statement.token_literal() != "let" {
             return false;
         }
 
         // Check if Box<dyn Statement> is a LetStatement
-        if let Statement::LetStatement(let_stmt) = *statement {
-            if let_stmt.name.value != name {
-                return false;
-            }
+        let let_statement = match statement.as_ref() {
+            Statement::LetStatement(let_statement) => let_statement,
+            _ => return false,
+        };
 
-            if let_stmt.name.token_literal() != name {
-                return false;
-            } else {
-                return true;
-            }
-        } else {
+        if let_statement.name.value != name {
             return false;
+        } else if let_statement.name.token_literal() != name {
+            return false;
+        } else {
+            return true;
         }
     }
 }

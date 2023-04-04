@@ -25,7 +25,7 @@ pub mod ast {
     }
 
     impl Node {
-        pub fn token_literal(&self) -> String {
+        pub fn token_literal(&self) -> &str {
             match self {
                 Node::Program(p) => p.token_literal(),
                 Node::Statement(s) => s.token_literal(),
@@ -48,9 +48,9 @@ pub mod ast {
     }
 
     impl Statement {
-        pub fn token_literal(&self) -> String {
+        pub fn token_literal(&self) -> &str {
             match self {
-                Statement::LetStatement(s) => s.token_literal(),
+                Statement::LetStatement(s) => &s.token_literal(),
             }
         }
     }
@@ -84,11 +84,11 @@ pub mod ast {
     }
 
     impl Program {
-        pub fn token_literal(&mut self) -> String {
+        pub fn token_literal(&self) -> &str {
             if self.statements.len() > 0 {
                 self.statements[0].token_literal()
             } else {
-                "".to_string()
+                ""
             }
         }
     }
@@ -109,8 +109,8 @@ pub mod ast {
     impl LetStatement {
         pub fn statement_node(&self) {}
 
-        pub fn token_literal(&self) -> String {
-            self.token.literal.clone()
+        pub fn token_literal(&self) -> &str {
+            self.token.literal.as_str()
         }
     }
 
@@ -129,13 +129,13 @@ pub mod ast {
     impl Identifier {
         pub fn expression_node() {}
 
-        pub fn token_literal(&self) -> String {
-            self.token.literal.clone()
+        pub fn token_literal(&self) -> &str {
+            &self.token.literal
         }
 
         pub fn new(to_string: String) -> Identifier {
             Identifier {
-                token: Token::new("", "".to_string()),
+                token: Token::new(TokenType::IDENT, to_string.clone()),
                 value: to_string,
             }
         }

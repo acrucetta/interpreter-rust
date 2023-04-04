@@ -4,16 +4,16 @@ pub mod token {
     use std::fmt;
     use std::fmt::Formatter;
 
-    pub type TokenType<'a> = &'a str;
+    pub type TokenType = String;
 
     #[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
     pub struct Token {
-        pub kind: TokenType<'static>,
+        pub kind: TokenType,
         pub literal: String,
     }
 
     impl Token {
-        pub fn new(kind: TokenType<'static>, literal: String) -> Token {
+        pub fn new(kind: TokenType, literal: String) -> Token {
             Token {
                 kind,
                 literal: literal,
@@ -21,16 +21,16 @@ pub mod token {
         }
     }
 
-    pub fn lookup_ident(ident: &str) -> TokenType<'static> {
+    pub fn lookup_ident(ident: &str) -> TokenType {
         match ident {
-            "fn" => FUNCTION,
-            "let" => LET,
-            "true" => TRUE,
-            "false" => FALSE,
-            "if" => IF,
-            "else" => ELSE,
-            "return" => RETURN,
-            _ => IDENT,
+            "fn" => FUNCTION.to_owned(),
+            "let" => LET.to_owned(),
+            "true" => TRUE.to_owned(),
+            "false" => FALSE.to_owned(),
+            "if" => IF.to_owned(),
+            "else" => ELSE.to_owned(),
+            "return" => RETURN.to_owned(),
+            _ => IDENT.to_owned(),
         }
     }
 
