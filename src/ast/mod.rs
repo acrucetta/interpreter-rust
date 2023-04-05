@@ -148,3 +148,27 @@ pub mod ast {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::{
+        ast::{Let, Statement},
+        *,
+    };
+
+    #[test]
+    fn display() {
+        let p = ast::Program {
+            statements: vec![Statement::Let(Box::new(Let {
+                name: "asdf".to_string(),
+                value: Expression::Identifier("bar".to_string()),
+            }))],
+        };
+
+        let expected = "let asdf = bar;";
+
+        if p.to_string() != expected {
+            panic!("expected {} but got {}", "foo", expected)
+        }
+    }
+}
