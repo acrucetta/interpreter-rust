@@ -25,38 +25,28 @@ pub mod ast {
         }
     }
 
-    impl Node {
-        pub fn token_literal(&self) -> &str {
-            match self {
-                Node::Program(p) => p.token_literal(),
-                Node::Statement(s) => s.token_literal(),
-                Node::Identifier(i) => i.token_literal(),
-            }
-        }
-    }
-
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     pub enum Statement {
-        LetStatement(LetStatement),
+        Let(Let),
     }
 
     impl fmt::Display for Statement {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
             match self {
-                Statement::LetStatement(s) => write!(f, "{}", s),
+                Statement::Let(s) => write!(f, "{}", s),
             }
         }
     }
 
     impl Statement {
-        pub fn token_literal(&self) -> &str {
+        pub fn token_literal(&self) -> String {
             match self {
-                Statement::LetStatement(s) => &s.token_literal(),
+                Statement::Let(s) => s.token_literal(),
             }
         }
 
         pub fn new() -> Statement {
-            Statement::LetStatement(LetStatement::new())
+            Statement::Let(Let::new())
         }
     }
 
@@ -89,11 +79,11 @@ pub mod ast {
     }
 
     impl Program {
-        pub fn token_literal(&self) -> &str {
+        pub fn token_literal(&self) -> String {
             if self.statements.len() > 0 {
                 self.statements[0].token_literal()
             } else {
-                ""
+                "".to_string()
             }
         }
 
@@ -103,28 +93,28 @@ pub mod ast {
     }
 
     #[derive(Clone, Debug, Eq, Serialize, Deserialize, Hash, PartialEq)]
-    pub struct LetStatement {
-        pub token: Token,
+    pub struct Let {
+        pub token: TokenKind,
         pub name: Identifier,
         pub value: Expression,
     }
 
-    impl fmt::Display for LetStatement {
+    impl fmt::Display for Let {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
             write!(f, "{} {} = {}", self.token_literal(), self.name, self.value)
         }
     }
 
-    impl LetStatement {
+    impl Let {
         pub fn statement_node(&self) {}
 
-        pub fn token_literal(&self) -> &str {
-            self.token.literal.as_str()
+        pub fn token_literal(&self) -> String {
+            self.token.to_string()
         }
 
-        pub fn new() -> LetStatement {
-            LetStatement {
-                token: Token::new(TokenKind::Let, "let".to_string()),
+        pub fn new() -> Let {
+            Let {
+                token: TokenKind::Let,
                 name: Identifier::new("".to_string()),
                 value: Expression::Identifier(Identifier::new("".to_string())),
             }
@@ -133,7 +123,7 @@ pub mod ast {
 
     #[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
     pub struct Identifier {
-        pub token: Token,
+        pub token: TokenKind,
         pub value: String,
     }
 
@@ -146,13 +136,13 @@ pub mod ast {
     impl Identifier {
         pub fn expression_node() {}
 
-        pub fn token_literal(&self) -> &str {
-            &self.token.literal
+        pub fn token_literal(&self) -> String {
+            self.token.to_string()
         }
 
         pub fn new(to_string: String) -> Identifier {
             Identifier {
-                token: Token::new(TokenKind::Ident, to_string.clone()),
+                token: TokenKind::Ident,
                 value: to_string,
             }
         }

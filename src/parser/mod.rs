@@ -1,6 +1,6 @@
 pub mod parser {
     use crate::ast::ast;
-    use crate::ast::ast::LetStatement;
+    use crate::ast::ast::Let;
     use crate::ast::ast::Statement;
     use crate::lexer::lexer::Lexer;
     use crate::token::token::Token;
@@ -29,7 +29,7 @@ pub mod parser {
             self.peek_token = self.l.next_token();
         }
 
-        pub fn parse_program(&self) -> ast::Program {
+        pub fn parse_program(&mut self) -> ast::Program {
             let mut program = ast::Program::new();
 
             while self.cur_token.kind != TokenKind::Eof {
@@ -42,15 +42,15 @@ pub mod parser {
             program
         }
 
-        fn parse_statement(&self) -> Option<Statement> {
+        fn parse_statement(&mut self) -> Option<Statement> {
             match self.cur_token.kind {
                 TokenKind::Let => self.parse_let_statement(),
                 _ => None,
             }
         }
 
-        fn parse_let_statement(&self) -> Option<LetStatement> {
-            let mut stmt = LetStatement::new();
+        fn parse_let_statement(&mut self) -> Option<Statement> {
+            let mut stmt = Let::new();
 
             if !self.expect_peek(TokenKind::Ident) {
                 return None;
@@ -66,7 +66,11 @@ pub mod parser {
                 self.next_token();
             }
 
-            Some(stmt)
+            Some(Statement::Let(Let {
+                token: TokenKind::Let,
+                name: ast::Identifier::new(name),
+                value: ast::Expression::Identifier(ast::Identifier::new("".to_string())),
+            }))
         }
 
         fn cur_token_is(&self, t: TokenKind) -> bool {
@@ -77,7 +81,7 @@ pub mod parser {
             self.peek_token.kind == t
         }
 
-        fn expect_peek(&self, t: TokenKind) -> bool {
+        fn expect_peek(&mut self, t: TokenKind) -> bool {
             if self.peek_token_is(t) {
                 self.next_token();
                 return true;
@@ -105,7 +109,7 @@ mod tests {
         .to_string();
 
         let l = lexer::lexer::Lexer::new(input);
-        let p = parser::Parser::new(l);
+        let mut p = parser::Parser::new(l);
 
         let program = p.parse_program();
 
@@ -134,7 +138,7 @@ mod tests {
 
         // Check if Box<dyn Statement> is a LetStatement
         let let_statement = match statement.as_ref() {
-            Statement::LetStatement(let_statement) => let_statement,
+            Statement::Let(let_statement) => let_statement,
             _ => return false,
         };
 
