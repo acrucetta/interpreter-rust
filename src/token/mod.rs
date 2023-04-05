@@ -1,4 +1,6 @@
 pub mod token {
+    use core::fmt;
+
     use serde::{Deserialize, Serialize};
 
     #[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
@@ -32,6 +34,41 @@ pub mod token {
         Return,
     }
 
+    impl fmt::Display for TokenKind {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            match self {
+                TokenKind::Illegal => write!(f, "ILLEGAL"),
+                TokenKind::Eof => write!(f, "EOF"),
+                TokenKind::Ident => write!(f, "IDENT"),
+                TokenKind::Int => write!(f, "INT"),
+                TokenKind::Assign => write!(f, "="),
+                TokenKind::Plus => write!(f, "+"),
+                TokenKind::Minus => write!(f, "-"),
+                TokenKind::Bang => write!(f, "!"),
+                TokenKind::Asterisk => write!(f, "*"),
+                TokenKind::Slash => write!(f, "/"),
+                TokenKind::NotEq => write!(f, "!="),
+                TokenKind::Eq => write!(f, "=="),
+                TokenKind::Lt => write!(f, "<"),
+                TokenKind::Gt => write!(f, ">"),
+                TokenKind::Comma => write!(f, ","),
+                TokenKind::Semicolon => write!(f, ";"),
+                TokenKind::LParen => write!(f, "("),
+                TokenKind::RParen => write!(f, ")"),
+                TokenKind::LBrace => write!(f, "{{"),
+                TokenKind::RBrace => write!(f, "}}"),
+                TokenKind::Function => write!(f, "FUNCTION"),
+                TokenKind::Let => write!(f, "LET"),
+                TokenKind::True => write!(f, "TRUE"),
+                TokenKind::False => write!(f, "FALSE"),
+                TokenKind::If => write!(f, "IF"),
+                TokenKind::Else => write!(f, "ELSE"),
+                TokenKind::Return => write!(f, "RETURN"),
+                TokenKind::NotEq => write!(f, "NOT_EQ"),
+            }
+        }
+    }
+
     #[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
     pub struct Token {
         pub kind: TokenKind,
@@ -59,32 +96,4 @@ pub mod token {
             _ => TokenKind::Ident,
         }
     }
-
-    pub const ILLEGAL: TokenKind = TokenKind::Illegal;
-    pub const EOF: TokenKind = TokenKind::Eof;
-    pub const IDENT: TokenKind = TokenKind::Ident;
-    pub const INT: TokenKind = TokenKind::Int;
-    pub const ASSIGN: TokenKind = TokenKind::Assign;
-    pub const PLUS: TokenKind = TokenKind::Plus;
-    pub const MINUS: TokenKind = TokenKind::Minus;
-    pub const BANG: TokenKind = TokenKind::Bang;
-    pub const ASTERISK: TokenKind = TokenKind::Asterisk;
-    pub const SLASH: TokenKind = TokenKind::Slash;
-    pub const NOT_EQ: TokenKind = TokenKind::NotEq;
-    pub const EQ: TokenKind = TokenKind::Eq;
-    pub const LT: TokenKind = TokenKind::Lt;
-    pub const GT: TokenKind = TokenKind::Gt;
-    pub const COMMA: TokenKind = TokenKind::Comma;
-    pub const SEMICOLON: TokenKind = TokenKind::Semicolon;
-    pub const LPAREN: TokenKind = TokenKind::LParen;
-    pub const RPAREN: TokenKind = TokenKind::RParen;
-    pub const LBRACE: TokenKind = TokenKind::LBrace;
-    pub const RBRACE: TokenKind = TokenKind::RBrace;
-    pub const FUNCTION: TokenKind = TokenKind::Function;
-    pub const LET: TokenKind = TokenKind::Let;
-    pub const TRUE: TokenKind = TokenKind::True;
-    pub const FALSE: TokenKind = TokenKind::False;
-    pub const IF: TokenKind = TokenKind::If;
-    pub const ELSE: TokenKind = TokenKind::Else;
-    pub const RETURN: TokenKind = TokenKind::Return;
 }

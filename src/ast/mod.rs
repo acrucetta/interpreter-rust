@@ -3,7 +3,8 @@ pub mod ast {
     use core::fmt;
     use std::any::Any;
 
-    use crate::token::token::{Token, IDENT};
+    use crate::token::token::Token;
+    use crate::token::token::TokenKind;
     use serde::{Deserialize, Serialize};
     use std::fmt::Formatter;
 
@@ -53,6 +54,10 @@ pub mod ast {
                 Statement::LetStatement(s) => &s.token_literal(),
             }
         }
+
+        pub fn new() -> Statement {
+            Statement::LetStatement(LetStatement::new())
+        }
     }
 
     #[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
@@ -91,6 +96,10 @@ pub mod ast {
                 ""
             }
         }
+
+        pub fn new() -> Program {
+            Program { statements: vec![] }
+        }
     }
 
     #[derive(Clone, Debug, Eq, Serialize, Deserialize, Hash, PartialEq)]
@@ -111,6 +120,14 @@ pub mod ast {
 
         pub fn token_literal(&self) -> &str {
             self.token.literal.as_str()
+        }
+
+        pub fn new() -> LetStatement {
+            LetStatement {
+                token: Token::new(TokenKind::Let, "let".to_string()),
+                name: Identifier::new("".to_string()),
+                value: Expression::Identifier(Identifier::new("".to_string())),
+            }
         }
     }
 
@@ -135,7 +152,7 @@ pub mod ast {
 
         pub fn new(to_string: String) -> Identifier {
             Identifier {
-                token: Token::new(IDENT, to_string.clone()),
+                token: Token::new(TokenKind::Ident, to_string.clone()),
                 value: to_string,
             }
         }

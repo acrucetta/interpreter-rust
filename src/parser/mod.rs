@@ -1,8 +1,10 @@
 pub mod parser {
     use crate::ast::ast;
+    use crate::ast::ast::LetStatement;
+    use crate::ast::ast::Statement;
     use crate::lexer::lexer::Lexer;
-    use crate::token;
     use crate::token::token::Token;
+    use crate::token::token::TokenKind;
 
     pub struct Parser {
         l: Lexer,
@@ -14,8 +16,8 @@ pub mod parser {
         pub fn new(l: Lexer) -> Parser {
             let mut p = Parser {
                 l,
-                cur_token: Token::new(token::token::EOF, "".to_string()),
-                peek_token: Token::new(token::token::EOF, "".to_string()),
+                cur_token: Token::new(TokenKind::Eof, "".to_string()),
+                peek_token: Token::new(TokenKind::Eof, "".to_string()),
             };
             p.next_token();
             p.next_token();
@@ -28,18 +30,68 @@ pub mod parser {
         }
 
         pub fn parse_program(&self) -> ast::Program {
-            todo!()
+            let mut program = ast::Program::new();
+
+            while self.cur_token.kind != TokenKind::Eof {
+                let stmt = self.parse_statement();
+                if let Some(stmt) = stmt {
+                    program.statements.push(stmt);
+                }
+                self.next_token();
+            }
+            program
+        }
+
+        fn parse_statement(&self) -> Option<Statement> {
+            match self.cur_token.kind {
+                TokenKind::Let => self.parse_let_statement(),
+                _ => None,
+            }
+        }
+
+        fn parse_let_statement(&self) -> Option<LetStatement> {
+            let mut stmt = LetStatement::new();
+
+            if !self.expect_peek(TokenKind::Ident) {
+                return None;
+            }
+
+            stmt.name = ast::Identifier::new(self.cur_token.literal.clone());
+
+            if !self.expect_peek(TokenKind::Assign) {
+                return None;
+            }
+
+            while !self.cur_token_is(TokenKind::Semicolon) {
+                self.next_token();
+            }
+
+            Some(stmt)
+        }
+
+        fn cur_token_is(&self, t: TokenKind) -> bool {
+            self.cur_token.kind == t
+        }
+
+        fn peek_token_is(&self, t: TokenKind) -> bool {
+            self.peek_token.kind == t
+        }
+
+        fn expect_peek(&self, t: TokenKind) -> bool {
+            if self.peek_token_is(t) {
+                self.next_token();
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::ast::ast::{LetStatement, Statement};
-    use crate::{
-        ast::{self, ast::Identifier},
-        lexer,
-    };
+    use crate::ast::ast::Statement;
+    use crate::{ast::ast::Identifier, lexer};
 
     use super::*;
 

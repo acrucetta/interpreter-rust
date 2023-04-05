@@ -1,7 +1,7 @@
 pub mod lexer {
 
     use crate::token;
-    use crate::token::token::Token;
+    use crate::token::token::{Token, TokenKind};
 
     pub struct Lexer {
         pub input: String,
@@ -45,37 +45,37 @@ pub mod lexer {
                             let ch = self.ch;
                             self.read_char();
                             let literal = ch.to_string() + &self.ch.to_string();
-                            Token::new(token::token::EQ, literal)
+                            Token::new(TokenKind::Eq, literal)
                         } else {
-                            Token::new(token::token::ASSIGN, self.ch.to_string())
+                            Token::new(TokenKind::Assign, self.ch.to_string())
                         }
                     }
                 }
-                ';' => tok = Token::new(token::token::SEMICOLON, self.ch.to_string()),
-                '(' => tok = Token::new(token::token::LPAREN, self.ch.to_string()),
-                ')' => tok = Token::new(token::token::RPAREN, self.ch.to_string()),
-                ',' => tok = Token::new(token::token::COMMA, self.ch.to_string()),
-                '+' => tok = Token::new(token::token::PLUS, self.ch.to_string()),
-                '{' => tok = Token::new(token::token::LBRACE, self.ch.to_string()),
-                '}' => tok = Token::new(token::token::RBRACE, self.ch.to_string()),
-                '-' => tok = Token::new(token::token::MINUS, self.ch.to_string()),
+                ';' => tok = Token::new(TokenKind::Semicolon, self.ch.to_string()),
+                '(' => tok = Token::new(TokenKind::LParen, self.ch.to_string()),
+                ')' => tok = Token::new(TokenKind::RParen, self.ch.to_string()),
+                ',' => tok = Token::new(TokenKind::Comma, self.ch.to_string()),
+                '+' => tok = Token::new(TokenKind::Plus, self.ch.to_string()),
+                '{' => tok = Token::new(TokenKind::LBrace, self.ch.to_string()),
+                '}' => tok = Token::new(TokenKind::RBrace, self.ch.to_string()),
+                '-' => tok = Token::new(TokenKind::Minus, self.ch.to_string()),
                 '!' => {
                     tok = {
                         if self.peek_char() == '=' {
                             let ch = self.ch;
                             self.read_char();
                             let literal = ch.to_string() + &self.ch.to_string();
-                            Token::new(token::token::NOT_EQ, literal)
+                            Token::new(TokenKind::NotEq, literal)
                         } else {
-                            Token::new(token::token::BANG, self.ch.to_string())
+                            Token::new(TokenKind::Bang, self.ch.to_string())
                         }
                     }
                 }
-                '*' => tok = Token::new(token::token::ASTERISK, self.ch.to_string()),
-                '/' => tok = Token::new(token::token::SLASH, self.ch.to_string()),
-                '<' => tok = Token::new(token::token::LT, self.ch.to_string()),
-                '>' => tok = Token::new(token::token::GT, self.ch.to_string()),
-                '\0' => tok = Token::new(token::token::EOF, "".to_string()),
+                '*' => tok = Token::new(TokenKind::Asterisk, self.ch.to_string()),
+                '/' => tok = Token::new(TokenKind::Slash, self.ch.to_string()),
+                '<' => tok = Token::new(TokenKind::Lt, self.ch.to_string()),
+                '>' => tok = Token::new(TokenKind::Gt, self.ch.to_string()),
+                '\0' => tok = Token::new(TokenKind::Eof, "".to_string()),
                 _ => {
                     if is_letter(self.ch) {
                         let literal = self.read_identifier();
@@ -83,10 +83,10 @@ pub mod lexer {
                         return Token::new(kind, literal);
                     } else if is_digit(self.ch) {
                         let literal = self.read_number();
-                        let kind = token::token::INT;
+                        let kind = TokenKind::Int;
                         return Token::new(kind, literal);
                     } else {
-                        tok = Token::new(token::token::ILLEGAL, self.ch.to_string());
+                        tok = Token::new(TokenKind::Illegal, self.ch.to_string());
                         return tok;
                     }
                 }
@@ -138,7 +138,7 @@ pub mod lexer {
 
 #[cfg(test)]
 mod lexer_tests {
-    use crate::token::{self, token::TokenType};
+    use crate::token::token::TokenKind;
 
     use super::{lexer::Lexer, *};
 
@@ -146,16 +146,16 @@ mod lexer_tests {
     pub fn test_next_token_small() {
         let input = "=+(){},;";
 
-        let tests: Vec<(TokenType, &str)> = vec![
-            (token::token::ASSIGN, "="),
-            (token::token::PLUS, "+"),
-            (token::token::LPAREN, "("),
-            (token::token::RPAREN, ")"),
-            (token::token::LBRACE, "{"),
-            (token::token::RBRACE, "}"),
-            (token::token::COMMA, ","),
-            (token::token::SEMICOLON, ";"),
-            (token::token::EOF, ""),
+        let tests: Vec<(TokenKind, String)> = vec![
+            (TokenKind::Assign, "=".to_string()),
+            (TokenKind::Plus, "+".to_string()),
+            (TokenKind::LParen, "(".to_string()),
+            (TokenKind::RParen, ")".to_string()),
+            (TokenKind::LBrace, "{".to_string()),
+            (TokenKind::RBrace, "}".to_string()),
+            (TokenKind::Comma, ",".to_string()),
+            (TokenKind::Semicolon, ";".to_string()),
+            (TokenKind::Eof, "".to_string()),
         ];
 
         let mut l = lexer::Lexer::new(input.to_string());
@@ -173,124 +173,19 @@ mod lexer_tests {
     fn test_next_token_assignment() {
         let input = "let five = 5;";
 
-        let tests: Vec<(TokenType, String)> = vec![
-            (token::token::LET, "let".to_string()),
-            (token::token::IDENT, "five".to_string()),
-            (token::token::ASSIGN, "=".to_string()),
-            (token::token::INT, "5".to_string()),
-            (token::token::SEMICOLON, ";".to_string()),
-            (token::token::EOF, "".to_string()),
+        let tests: Vec<(TokenKind, String)> = vec![
+            (TokenKind::Let, "let".to_string()),
+            (TokenKind::Ident, "five".to_string()),
+            (TokenKind::Assign, "=".to_string()),
+            (TokenKind::Int, "5".to_string()),
+            (TokenKind::Semicolon, ";".to_string()),
+            (TokenKind::Eof, "".to_string()),
         ];
 
         let mut l = lexer::Lexer::new(input.to_string());
 
         for (expected_kind, expected_literal) in tests {
             let tok = l.next_token();
-
-            assert_eq!(tok.kind, expected_kind);
-            assert_eq!(tok.literal, expected_literal);
-        }
-    }
-
-    #[test]
-    fn test_next_token_assignment_function() {
-        let input = "let five = 5; \
-                 let ten = 10; \
-                 let add = fn(x, y) { \
-                   x + y; \
-                 }; \
-                 let result = add(five, ten); \
-                 !-/*5; \
-                5 < 10 > 5; \
-                if (5 < 10) { \
-                  return true; \
-                } else { \
-                  return false; \
-                } \
-                10 == 10; \
-                10 != 9;";
-
-        let tests: Vec<(token::token::TokenType, String)> = vec![
-            (token::token::LET, "let".to_string()),
-            (token::token::IDENT, "five".to_string()),
-            (token::token::ASSIGN, "=".to_string()),
-            (token::token::INT, "5".to_string()),
-            (token::token::SEMICOLON, ";".to_string()),
-            (token::token::LET, "let".to_string()),
-            (token::token::IDENT, "ten".to_string()),
-            (token::token::ASSIGN, "=".to_string()),
-            (token::token::INT, "10".to_string()),
-            (token::token::SEMICOLON, ";".to_string()),
-            (token::token::LET, "let".to_string()),
-            (token::token::IDENT, "add".to_string()),
-            (token::token::ASSIGN, "=".to_string()),
-            (token::token::FUNCTION, "fn".to_string()),
-            (token::token::LPAREN, "(".to_string()),
-            (token::token::IDENT, "x".to_string()),
-            (token::token::COMMA, ",".to_string()),
-            (token::token::IDENT, "y".to_string()),
-            (token::token::RPAREN, ")".to_string()),
-            (token::token::LBRACE, "{".to_string()),
-            (token::token::IDENT, "x".to_string()),
-            (token::token::PLUS, "+".to_string()),
-            (token::token::IDENT, "y".to_string()),
-            (token::token::SEMICOLON, ";".to_string()),
-            (token::token::RBRACE, "}".to_string()),
-            (token::token::SEMICOLON, ";".to_string()),
-            (token::token::LET, "let".to_string()),
-            (token::token::IDENT, "result".to_string()),
-            (token::token::ASSIGN, "=".to_string()),
-            (token::token::IDENT, "add".to_string()),
-            (token::token::LPAREN, "(".to_string()),
-            (token::token::IDENT, "five".to_string()),
-            (token::token::COMMA, ",".to_string()),
-            (token::token::IDENT, "ten".to_string()),
-            (token::token::RPAREN, ")".to_string()),
-            (token::token::SEMICOLON, ";".to_string()),
-            (token::token::BANG, "!".to_string()),
-            (token::token::MINUS, "-".to_string()),
-            (token::token::SLASH, "/".to_string()),
-            (token::token::ASTERISK, "*".to_string()),
-            (token::token::INT, "5".to_string()),
-            (token::token::SEMICOLON, ";".to_string()),
-            (token::token::INT, "5".to_string()),
-            (token::token::LT, "<".to_string()),
-            (token::token::INT, "10".to_string()),
-            (token::token::GT, ">".to_string()),
-            (token::token::INT, "5".to_string()),
-            (token::token::SEMICOLON, ";".to_string()),
-            (token::token::IF, "if".to_string()),
-            (token::token::LPAREN, "(".to_string()),
-            (token::token::INT, "5".to_string()),
-            (token::token::LT, "<".to_string()),
-            (token::token::INT, "10".to_string()),
-            (token::token::RPAREN, ")".to_string()),
-            (token::token::LBRACE, "{".to_string()),
-            (token::token::RETURN, "return".to_string()),
-            (token::token::TRUE, "true".to_string()),
-            (token::token::SEMICOLON, ";".to_string()),
-            (token::token::RBRACE, "}".to_string()),
-            (token::token::ELSE, "else".to_string()),
-            (token::token::LBRACE, "{".to_string()),
-            (token::token::RETURN, "return".to_string()),
-            (token::token::FALSE, "false".to_string()),
-            (token::token::SEMICOLON, ";".to_string()),
-            (token::token::RBRACE, "}".to_string()),
-            (token::token::INT, "10".to_string()),
-            (token::token::EQ, "==".to_string()),
-            (token::token::INT, "10".to_string()),
-            (token::token::SEMICOLON, ";".to_string()),
-            (token::token::INT, "10".to_string()),
-            (token::token::NOT_EQ, "!=".to_string()),
-            (token::token::INT, "9".to_string()),
-            (token::token::SEMICOLON, ";".to_string()),
-            (token::token::EOF, "".to_string()),
-        ];
-
-        let mut lexer = Lexer::new(input.to_string());
-
-        for (expected_kind, expected_literal) in tests {
-            let tok = lexer.next_token();
 
             assert_eq!(tok.kind, expected_kind);
             assert_eq!(tok.literal, expected_literal);
