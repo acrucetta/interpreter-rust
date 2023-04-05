@@ -4,20 +4,19 @@ pub mod parser {
     use crate::ast::ast::Statement;
     use crate::lexer::lexer::Lexer;
     use crate::token::token::Token;
-    use crate::token::token::TokenKind;
 
     pub struct Parser {
         l: Lexer,
-        cur_token: TokenKind,
-        peek_token: TokenKind,
+        cur_token: Token,
+        peek_token: Token,
     }
 
     impl Parser {
         pub fn new(l: Lexer) -> Parser {
             let mut p = Parser {
                 l,
-                cur_token: Token::new(TokenKind::Eof, "".to_string()),
-                peek_token: Token::new(TokenKind::Eof, "".to_string()),
+                cur_token: Token::Eof,
+                peek_token: Token::Eof,
             };
             p.next_token();
             p.next_token();
@@ -32,7 +31,7 @@ pub mod parser {
         pub fn parse_program(&mut self) -> ast::Program {
             let mut program = ast::Program::new();
 
-            while self.cur_token.kind != TokenKind::Eof {
+            while self.cur_token.kind != Token::Eof {
                 let stmt = self.parse_statement();
                 if let Some(stmt) = stmt {
                     program.statements.push(stmt);
@@ -44,7 +43,7 @@ pub mod parser {
 
         fn parse_statement(&mut self) -> Option<Statement> {
             match self.cur_token.kind {
-                TokenKind::Let => self.parse_let_statement(),
+                Token::Let => self.parse_let_statement(),
                 _ => None,
             }
         }
@@ -52,36 +51,36 @@ pub mod parser {
         fn parse_let_statement(&mut self) -> Option<Statement> {
             let mut stmt = Let::new();
 
-            if !self.expect_peek(TokenKind::Ident) {
+            if !self.expect_peek(Token::Ident) {
                 return None;
             }
 
             stmt.name = ast::Identifier::new(self.cur_token.literal.clone());
 
-            if !self.expect_peek(TokenKind::Assign) {
+            if !self.expect_peek(Token::Assign) {
                 return None;
             }
 
-            while !self.cur_token_is(TokenKind::Semicolon) {
+            while !self.cur_token_is(Token::Semicolon) {
                 self.next_token();
             }
 
             Some(Statement::Let(Let {
-                token: TokenKind::Let,
+                token: Token::Let,
                 name: ast::Identifier::new(name),
                 value: ast::Expression::Identifier(ast::Identifier::new("".to_string())),
             }))
         }
 
-        fn cur_token_is(&self, t: TokenKind) -> bool {
+        fn cur_token_is(&self, t: Token) -> bool {
             self.cur_token.kind == t
         }
 
-        fn peek_token_is(&self, t: TokenKind) -> bool {
+        fn peek_token_is(&self, t: Token) -> bool {
             self.peek_token.kind == t
         }
 
-        fn expect_peek(&mut self, t: TokenKind) -> bool {
+        fn expect_peek(&mut self, t: Token) -> bool {
             if self.peek_token_is(t) {
                 self.next_token();
                 return true;
