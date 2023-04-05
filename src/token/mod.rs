@@ -5,10 +5,10 @@ pub mod token {
 
     #[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
     pub enum TokenKind {
-        Illegal,
+        Illegal(String),
         Eof,
-        Ident,
-        Int,
+        Ident(String),
+        Int(i64),
         Assign,
         Plus,
         Minus,
@@ -37,10 +37,10 @@ pub mod token {
     impl fmt::Display for TokenKind {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             match self {
-                TokenKind::Illegal => write!(f, "ILLEGAL"),
+                TokenKind::Illegal(s) => write!(f, "{}", s),
                 TokenKind::Eof => write!(f, "EOF"),
-                TokenKind::Ident => write!(f, "IDENT"),
-                TokenKind::Int => write!(f, "INT"),
+                TokenKind::Ident(s) => write!(f, "{}", s),
+                TokenKind::Int(i) => write!(f, "{}", i),
                 TokenKind::Assign => write!(f, "="),
                 TokenKind::Plus => write!(f, "+"),
                 TokenKind::Minus => write!(f, "-"),
@@ -57,14 +57,37 @@ pub mod token {
                 TokenKind::RParen => write!(f, ")"),
                 TokenKind::LBrace => write!(f, "{{"),
                 TokenKind::RBrace => write!(f, "}}"),
-                TokenKind::Function => write!(f, "FUNCTION"),
-                TokenKind::Let => write!(f, "LET"),
-                TokenKind::True => write!(f, "TRUE"),
-                TokenKind::False => write!(f, "FALSE"),
-                TokenKind::If => write!(f, "IF"),
-                TokenKind::Else => write!(f, "ELSE"),
-                TokenKind::Return => write!(f, "RETURN"),
-                TokenKind::NotEq => write!(f, "NOT_EQ"),
+                TokenKind::Function => write!(f, "fn"),
+                TokenKind::Let => write!(f, "let"),
+                TokenKind::True => write!(f, "true"),
+                TokenKind::False => write!(f, "false"),
+                TokenKind::If => write!(f, "if"),
+                TokenKind::Else => write!(f, "else"),
+                TokenKind::Return => write!(f, "return"),
+            }
+        }
+    }
+
+    impl TryFrom<char> for TokenKind {
+        type Error = String;
+
+        fn try_from(value: char) -> Result<Self, Self::Error> {
+            match value {
+                '=' => Ok(TokenKind::Assign),
+                '+' => Ok(TokenKind::Plus),
+                '-' => Ok(TokenKind::Minus),
+                '!' => Ok(TokenKind::Bang),
+                '*' => Ok(TokenKind::Asterisk),
+                '/' => Ok(TokenKind::Slash),
+                ',' => Ok(TokenKind::Comma),
+                ';' => Ok(TokenKind::Semicolon),
+                '(' => Ok(TokenKind::LParen),
+                ')' => Ok(TokenKind::RParen),
+                '{' => Ok(TokenKind::LBrace),
+                '}' => Ok(TokenKind::RBrace),
+                '<' => Ok(TokenKind::Lt),
+                '>' => Ok(TokenKind::Gt),
+                _ => Err(format!("Unknown character: {}", value)),
             }
         }
     }
@@ -93,7 +116,7 @@ pub mod token {
             "if" => TokenKind::If,
             "else" => TokenKind::Else,
             "return" => TokenKind::Return,
-            _ => TokenKind::Ident,
+            _ => TokenKind::Ident(ident.to_string()),
         }
     }
 }

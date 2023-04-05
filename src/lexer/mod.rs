@@ -1,5 +1,7 @@
 pub mod lexer {
 
+    use core::num;
+
     use crate::token;
     use crate::token::token::{Token, TokenKind};
 
@@ -11,9 +13,9 @@ pub mod lexer {
     }
 
     impl Lexer {
-        pub fn new(input: String) -> Lexer {
+        pub fn new(input: &str) -> Lexer {
             let mut l = Lexer {
-                input: input,
+                input: input.into(),
                 position: 0,
                 read_position: 0,
                 ch: 0 as char,
@@ -33,66 +35,19 @@ pub mod lexer {
             self.read_position += 1;
         }
 
-        pub fn next_token(&mut self) -> Token {
-            let tok: Token;
-
+        pub fn next_token(&mut self) -> Result<TokenKind, String> {
             self.skip_whitespace();
 
-            match self.ch {
-                '=' => {
-                    tok = {
-                        if self.peek_char() == '=' {
-                            let ch = self.ch;
-                            self.read_char();
-                            let literal = ch.to_string() + &self.ch.to_string();
-                            Token::new(TokenKind::Eq, literal)
-                        } else {
-                            Token::new(TokenKind::Assign, self.ch.to_string())
-                        }
-                    }
-                }
-                ';' => tok = Token::new(TokenKind::Semicolon, self.ch.to_string()),
-                '(' => tok = Token::new(TokenKind::LParen, self.ch.to_string()),
-                ')' => tok = Token::new(TokenKind::RParen, self.ch.to_string()),
-                ',' => tok = Token::new(TokenKind::Comma, self.ch.to_string()),
-                '+' => tok = Token::new(TokenKind::Plus, self.ch.to_string()),
-                '{' => tok = Token::new(TokenKind::LBrace, self.ch.to_string()),
-                '}' => tok = Token::new(TokenKind::RBrace, self.ch.to_string()),
-                '-' => tok = Token::new(TokenKind::Minus, self.ch.to_string()),
-                '!' => {
-                    tok = {
-                        if self.peek_char() == '=' {
-                            let ch = self.ch;
-                            self.read_char();
-                            let literal = ch.to_string() + &self.ch.to_string();
-                            Token::new(TokenKind::NotEq, literal)
-                        } else {
-                            Token::new(TokenKind::Bang, self.ch.to_string())
-                        }
-                    }
-                }
-                '*' => tok = Token::new(TokenKind::Asterisk, self.ch.to_string()),
-                '/' => tok = Token::new(TokenKind::Slash, self.ch.to_string()),
-                '<' => tok = Token::new(TokenKind::Lt, self.ch.to_string()),
-                '>' => tok = Token::new(TokenKind::Gt, self.ch.to_string()),
-                '\0' => tok = Token::new(TokenKind::Eof, "".to_string()),
-                _ => {
-                    if is_letter(self.ch) {
-                        let literal = self.read_identifier();
-                        let kind = token::token::lookup_ident(&literal.to_string());
-                        return Token::new(kind, literal);
-                    } else if is_digit(self.ch) {
-                        let literal = self.read_number();
-                        let kind = TokenKind::Int;
-                        return Token::new(kind, literal);
-                    } else {
-                        tok = Token::new(TokenKind::Illegal, self.ch.to_string());
-                        return tok;
-                    }
-                }
-            }
-            self.read_char();
-            return tok;
+            let token = if self.ch.is_alphabetic() {
+                self.read_keyword_or_ident()
+            } else if self.ch.is_numeric() {
+                self.read_number()
+            } else {
+                let token = self.ch.try_into()?;
+                self.read_char();
+                token
+            };
+            Ok(token)
         }
 
         fn peek_char(&self) -> char {
@@ -103,13 +58,18 @@ pub mod lexer {
             }
         }
 
-        fn read_identifier(&mut self) -> String {
-            let position = self.position;
-            while is_letter(self.ch) {
+        fn read_keyword_or_ident(&mut self) -> TokenKind {
+            let start_position = self.position;
+            let mut end_position = start_position;
+            while self.ch.is_alphanumeric() {
                 self.read_char();
+                end_position += 1;
             }
-            // Return from the position to the current position
-            return self.input[position..self.position].to_string();
+            match &self.input[start_position..end_position] {
+                "fn" => TokenKind::Function,
+                "let" => TokenKind::Let,
+                ident => TokenKind::Ident(ident.to_string()),
+            }
         }
 
         fn skip_whitespace(&mut self) -> () {
@@ -118,12 +78,18 @@ pub mod lexer {
             }
         }
 
-        fn read_number(&mut self) -> String {
-            let position = self.position;
-            while is_digit(self.ch) {
+        fn read_number(&mut self) -> TokenKind {
+            let start_position = self.position;
+            let mut end_position = start_position;
+
+            while self.ch.is_numeric() {
                 self.read_char();
+                end_position += 1;
             }
-            return self.input[position..self.position].to_string();
+            match self.input[start_position..end_position].parse() {
+                Ok(num) => TokenKind::Int(num),
+                Err(msg) => TokenKind::Illegal(msg.to_string()),
+            }
         }
     }
 
@@ -146,26 +112,27 @@ mod lexer_tests {
     pub fn test_next_token_small() {
         let input = "=+(){},;";
 
-        let tests: Vec<(TokenKind, String)> = vec![
-            (TokenKind::Assign, "=".to_string()),
-            (TokenKind::Plus, "+".to_string()),
-            (TokenKind::LParen, "(".to_string()),
-            (TokenKind::RParen, ")".to_string()),
-            (TokenKind::LBrace, "{".to_string()),
-            (TokenKind::RBrace, "}".to_string()),
-            (TokenKind::Comma, ",".to_string()),
-            (TokenKind::Semicolon, ";".to_string()),
-            (TokenKind::Eof, "".to_string()),
+        let tests: Vec<TokenKind> = vec![
+            TokenKind::Assign,
+            TokenKind::Plus,
+            TokenKind::LParen,
+            TokenKind::RParen,
+            TokenKind::LBrace,
+            TokenKind::RBrace,
+            TokenKind::Comma,
+            TokenKind::Semicolon,
+            TokenKind::Eof,
         ];
 
-        let mut l = lexer::Lexer::new(input.to_string());
-
-        for (expected_kind, expected_literal) in tests {
-            let tok = l.next_token();
-
-            assert_eq!(tok.kind, expected_kind);
-            assert_eq!(tok.literal, expected_literal);
+        let mut l = lexer::Lexer::new(input);
+        let mut data: Vec<TokenKind> = Vec::new();
+        while let Ok(tok) = l.next_token() {
+            data.push(tok);
+            if tok == TokenKind::Eof {
+                break;
+            }
         }
+        assert_eq!(data, tests);
     }
 
     /// .
@@ -173,22 +140,24 @@ mod lexer_tests {
     fn test_next_token_assignment() {
         let input = "let five = 5;";
 
-        let tests: Vec<(TokenKind, String)> = vec![
-            (TokenKind::Let, "let".to_string()),
-            (TokenKind::Ident, "five".to_string()),
-            (TokenKind::Assign, "=".to_string()),
-            (TokenKind::Int, "5".to_string()),
-            (TokenKind::Semicolon, ";".to_string()),
-            (TokenKind::Eof, "".to_string()),
+        let tests: Vec<TokenKind> = vec![
+            TokenKind::Let,
+            TokenKind::Ident("five".to_string()),
+            TokenKind::Assign,
+            TokenKind::Int(5),
+            TokenKind::Semicolon,
+            TokenKind::Eof,
         ];
 
-        let mut l = lexer::Lexer::new(input.to_string());
-
-        for (expected_kind, expected_literal) in tests {
-            let tok = l.next_token();
-
-            assert_eq!(tok.kind, expected_kind);
-            assert_eq!(tok.literal, expected_literal);
+        let mut lexer = Lexer::new(input);
+        let mut data = Vec::new();
+        loop {
+            let token = lexer.next_token().expect("token");
+            data.push(token.clone());
+            if token == TokenKind::Eof {
+                break;
+            }
         }
+        assert_eq!(data, tests);
     }
 }
