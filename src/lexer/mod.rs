@@ -2,7 +2,7 @@ pub mod lexer {
 
     use core::num;
 
-    use crate::token::token::{Token, TokenKind};
+    use crate::token::token::Token;
 
     pub struct Lexer {
         pub input: String,
@@ -34,7 +34,7 @@ pub mod lexer {
             self.read_position += 1;
         }
 
-        pub fn next_token(&mut self) -> Result<TokenKind, String> {
+        pub fn next_token(&mut self) -> Result<Token, String> {
             self.skip_whitespace();
 
             let token = if self.ch.is_alphabetic() {
@@ -57,7 +57,7 @@ pub mod lexer {
             }
         }
 
-        fn read_keyword_or_ident(&mut self) -> TokenKind {
+        fn read_keyword_or_ident(&mut self) -> Token {
             let start_position = self.position;
             let mut end_position = start_position;
             while self.ch.is_alphanumeric() {
@@ -65,9 +65,9 @@ pub mod lexer {
                 end_position += 1;
             }
             match &self.input[start_position..end_position] {
-                "fn" => TokenKind::Function,
-                "let" => TokenKind::Let,
-                ident => TokenKind::Ident(ident.to_string()),
+                "fn" => Token::Function,
+                "let" => Token::Let,
+                ident => Token::Ident(ident.to_string()),
             }
         }
 
@@ -77,7 +77,7 @@ pub mod lexer {
             }
         }
 
-        fn read_number(&mut self) -> TokenKind {
+        fn read_number(&mut self) -> Token {
             let start_position = self.position;
             let mut end_position = start_position;
 
@@ -86,8 +86,8 @@ pub mod lexer {
                 end_position += 1;
             }
             match self.input[start_position..end_position].parse() {
-                Ok(num) => TokenKind::Int(num),
-                Err(msg) => TokenKind::Illegal(msg.to_string()),
+                Ok(num) => Token::Int(num),
+                Err(msg) => Token::Illegal(msg.to_string()),
             }
         }
     }
@@ -103,7 +103,7 @@ pub mod lexer {
 
 #[cfg(test)]
 mod lexer_tests {
-    use crate::token::token::TokenKind;
+    use crate::token::token::Token;
 
     use super::{lexer::Lexer, *};
 
@@ -111,23 +111,23 @@ mod lexer_tests {
     pub fn test_next_token_small() {
         let input = "=+(){},;";
 
-        let tests: Vec<TokenKind> = vec![
-            TokenKind::Assign,
-            TokenKind::Plus,
-            TokenKind::LParen,
-            TokenKind::RParen,
-            TokenKind::LBrace,
-            TokenKind::RBrace,
-            TokenKind::Comma,
-            TokenKind::Semicolon,
-            TokenKind::Eof,
+        let tests: Vec<Token> = vec![
+            Token::Assign,
+            Token::Plus,
+            Token::LParen,
+            Token::RParen,
+            Token::LBrace,
+            Token::RBrace,
+            Token::Comma,
+            Token::Semicolon,
+            Token::Eof,
         ];
 
         let mut l = lexer::Lexer::new(input);
-        let mut data: Vec<TokenKind> = Vec::new();
+        let mut data: Vec<Token> = Vec::new();
         while let Ok(tok) = l.next_token() {
             data.push(tok);
-            if tok == TokenKind::Eof {
+            if tok == Token::Eof {
                 break;
             }
         }
@@ -139,13 +139,13 @@ mod lexer_tests {
     fn test_next_token_assignment() {
         let input = "let five = 5;";
 
-        let tests: Vec<TokenKind> = vec![
-            TokenKind::Let,
-            TokenKind::Ident("five".to_string()),
-            TokenKind::Assign,
-            TokenKind::Int(5),
-            TokenKind::Semicolon,
-            TokenKind::Eof,
+        let tests: Vec<Token> = vec![
+            Token::Let,
+            Token::Ident("five".to_string()),
+            Token::Assign,
+            Token::Int(5),
+            Token::Semicolon,
+            Token::Eof,
         ];
 
         let mut lexer = Lexer::new(input);
@@ -153,7 +153,7 @@ mod lexer_tests {
         loop {
             let token = lexer.next_token().expect("token");
             data.push(token.clone());
-            if token == TokenKind::Eof {
+            if token == Token::Eof {
                 break;
             }
         }

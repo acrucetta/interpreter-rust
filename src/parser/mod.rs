@@ -31,7 +31,7 @@ pub mod parser {
         pub fn parse_program(&mut self) -> ast::Program {
             let mut program = ast::Program::new();
 
-            while self.cur_token.kind != Token::Eof {
+            while self.cur_token != Token::Eof {
                 let stmt = self.parse_statement();
                 if let Some(stmt) = stmt {
                     program.statements.push(stmt);
@@ -42,7 +42,7 @@ pub mod parser {
         }
 
         fn parse_statement(&mut self) -> Option<Statement> {
-            match self.cur_token.kind {
+            match self.cur_token {
                 Token::Let => self.parse_let_statement(),
                 _ => None,
             }
@@ -55,7 +55,7 @@ pub mod parser {
                 return None;
             }
 
-            stmt.name = ast::Identifier::new(self.cur_token.literal.clone());
+            stmt.name = ast::Identifier::new(self.cur_token.clone());
 
             if !self.expect_peek(Token::Assign) {
                 return None;
@@ -73,11 +73,11 @@ pub mod parser {
         }
 
         fn cur_token_is(&self, t: Token) -> bool {
-            self.cur_token.kind == t
+            self.cur_token == t
         }
 
         fn peek_token_is(&self, t: Token) -> bool {
-            self.peek_token.kind == t
+            self.peek_token == t
         }
 
         fn expect_peek(&mut self, t: Token) -> bool {

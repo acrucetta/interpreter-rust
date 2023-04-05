@@ -1,7 +1,6 @@
 pub mod repl {
 
     use crate::lexer::lexer::Lexer;
-    use crate::token::token::TokenKind;
     use crate::token::token::{self, Token};
     use std::io::{BufRead, Write};
 
@@ -20,7 +19,7 @@ pub mod repl {
             loop {
                 let tok = l.next_token();
                 println!("{:?}", tok);
-                if Ok(TokenKind::Eof) == tok {
+                if Ok(Token::Eof) == tok {
                     break;
                 }
             }
