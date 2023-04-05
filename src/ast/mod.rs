@@ -1,10 +1,8 @@
 pub mod ast {
 
     use core::fmt;
-    use std::any::Any;
 
     use crate::token::token::Token;
-    use crate::token::token::TokenKind;
     use serde::{Deserialize, Serialize};
     use std::fmt::Formatter;
 
@@ -94,7 +92,7 @@ pub mod ast {
 
     #[derive(Clone, Debug, Eq, Serialize, Deserialize, Hash, PartialEq)]
     pub struct Let {
-        pub token: TokenKind,
+        pub token: Token,
         pub name: Identifier,
         pub value: Expression,
     }
@@ -114,7 +112,7 @@ pub mod ast {
 
         pub fn new() -> Let {
             Let {
-                token: TokenKind::Let,
+                token: Token::Let,
                 name: Identifier::new("".to_string()),
                 value: Expression::Identifier(Identifier::new("".to_string())),
             }
@@ -123,7 +121,7 @@ pub mod ast {
 
     #[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
     pub struct Identifier {
-        pub token: TokenKind,
+        pub token: Token,
         pub value: String,
     }
 
@@ -142,7 +140,7 @@ pub mod ast {
 
         pub fn new(to_string: String) -> Identifier {
             Identifier {
-                token: TokenKind::Ident,
+                token: Token::Ident(to_string.clone()),
                 value: to_string,
             }
         }
