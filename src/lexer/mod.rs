@@ -2,7 +2,6 @@ pub mod lexer {
 
     use core::num;
 
-    use crate::token;
     use crate::token::token::{Token, TokenKind};
 
     pub struct Lexer {

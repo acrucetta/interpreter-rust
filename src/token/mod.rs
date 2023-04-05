@@ -4,7 +4,7 @@ pub mod token {
     use serde::{Deserialize, Serialize};
 
     #[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
-    pub enum TokenKind {
+    pub enum Token {
         Illegal(String),
         Eof,
         Ident(String),
@@ -34,89 +34,74 @@ pub mod token {
         Return,
     }
 
-    impl fmt::Display for TokenKind {
+    impl fmt::Display for Token {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             match self {
-                TokenKind::Illegal(s) => write!(f, "{}", s),
-                TokenKind::Eof => write!(f, "EOF"),
-                TokenKind::Ident(s) => write!(f, "{}", s),
-                TokenKind::Int(i) => write!(f, "{}", i),
-                TokenKind::Assign => write!(f, "="),
-                TokenKind::Plus => write!(f, "+"),
-                TokenKind::Minus => write!(f, "-"),
-                TokenKind::Bang => write!(f, "!"),
-                TokenKind::Asterisk => write!(f, "*"),
-                TokenKind::Slash => write!(f, "/"),
-                TokenKind::NotEq => write!(f, "!="),
-                TokenKind::Eq => write!(f, "=="),
-                TokenKind::Lt => write!(f, "<"),
-                TokenKind::Gt => write!(f, ">"),
-                TokenKind::Comma => write!(f, ","),
-                TokenKind::Semicolon => write!(f, ";"),
-                TokenKind::LParen => write!(f, "("),
-                TokenKind::RParen => write!(f, ")"),
-                TokenKind::LBrace => write!(f, "{{"),
-                TokenKind::RBrace => write!(f, "}}"),
-                TokenKind::Function => write!(f, "fn"),
-                TokenKind::Let => write!(f, "let"),
-                TokenKind::True => write!(f, "true"),
-                TokenKind::False => write!(f, "false"),
-                TokenKind::If => write!(f, "if"),
-                TokenKind::Else => write!(f, "else"),
-                TokenKind::Return => write!(f, "return"),
+                Token::Illegal(s) => write!(f, "{}", s),
+                Token::Eof => write!(f, "EOF"),
+                Token::Ident(s) => write!(f, "{}", s),
+                Token::Int(i) => write!(f, "{}", i),
+                Token::Assign => write!(f, "="),
+                Token::Plus => write!(f, "+"),
+                Token::Minus => write!(f, "-"),
+                Token::Bang => write!(f, "!"),
+                Token::Asterisk => write!(f, "*"),
+                Token::Slash => write!(f, "/"),
+                Token::NotEq => write!(f, "!="),
+                Token::Eq => write!(f, "=="),
+                Token::Lt => write!(f, "<"),
+                Token::Gt => write!(f, ">"),
+                Token::Comma => write!(f, ","),
+                Token::Semicolon => write!(f, ";"),
+                Token::LParen => write!(f, "("),
+                Token::RParen => write!(f, ")"),
+                Token::LBrace => write!(f, "{{"),
+                Token::RBrace => write!(f, "}}"),
+                Token::Function => write!(f, "fn"),
+                Token::Let => write!(f, "let"),
+                Token::True => write!(f, "true"),
+                Token::False => write!(f, "false"),
+                Token::If => write!(f, "if"),
+                Token::Else => write!(f, "else"),
+                Token::Return => write!(f, "return"),
             }
         }
     }
 
-    impl TryFrom<char> for TokenKind {
+    impl TryFrom<char> for Token {
         type Error = String;
 
         fn try_from(value: char) -> Result<Self, Self::Error> {
             match value {
-                '=' => Ok(TokenKind::Assign),
-                '+' => Ok(TokenKind::Plus),
-                '-' => Ok(TokenKind::Minus),
-                '!' => Ok(TokenKind::Bang),
-                '*' => Ok(TokenKind::Asterisk),
-                '/' => Ok(TokenKind::Slash),
-                ',' => Ok(TokenKind::Comma),
-                ';' => Ok(TokenKind::Semicolon),
-                '(' => Ok(TokenKind::LParen),
-                ')' => Ok(TokenKind::RParen),
-                '{' => Ok(TokenKind::LBrace),
-                '}' => Ok(TokenKind::RBrace),
-                '<' => Ok(TokenKind::Lt),
-                '>' => Ok(TokenKind::Gt),
+                '=' => Ok(Token::Assign),
+                '+' => Ok(Token::Plus),
+                '-' => Ok(Token::Minus),
+                '!' => Ok(Token::Bang),
+                '*' => Ok(Token::Asterisk),
+                '/' => Ok(Token::Slash),
+                ',' => Ok(Token::Comma),
+                ';' => Ok(Token::Semicolon),
+                '(' => Ok(Token::LParen),
+                ')' => Ok(Token::RParen),
+                '{' => Ok(Token::LBrace),
+                '}' => Ok(Token::RBrace),
+                '<' => Ok(Token::Lt),
+                '>' => Ok(Token::Gt),
                 _ => Err(format!("Unknown character: {}", value)),
             }
         }
     }
 
-    #[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
-    pub struct Token {
-        pub kind: TokenKind,
-        pub literal: String,
-    }
-
-    impl Token {
-        pub fn new(kind: TokenKind, literal: String) -> Token {
-            Token {
-                kind,
-                literal: literal,
-            }
-        }
-    }
-
-    pub fn lookup_ident(ident: &str) -> TokenKind {
+    pub fn lookup_ident(ident: &str) -> Token {
         match ident {
-            "fn" => TokenKind::Function,
-            "let" => TokenKind::Let,
-            "true" => TokenKind::True,
-            "false" => TokenKind::False,
-            "if" => TokenKind::If,
-            "else" => TokenKind::Else,
-            "return" => TokenKind::Return,
-            _ => TokenKind::Ident(ident.to_string()),
+            "fn" => Token::Function,
+            "let" => Token::Let,
+            "true" => Token::True,
+            "false" => Token::False,
+            "if" => Token::If,
+            "else" => Token::Else,
+            "return" => Token::Return,
+            _ => Token::Ident(ident.to_string()),
         }
     }
 }

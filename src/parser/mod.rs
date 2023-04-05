@@ -8,8 +8,8 @@ pub mod parser {
 
     pub struct Parser {
         l: Lexer,
-        cur_token: Token,
-        peek_token: Token,
+        cur_token: TokenKind,
+        peek_token: TokenKind,
     }
 
     impl Parser {
@@ -26,7 +26,7 @@ pub mod parser {
 
         fn next_token(&mut self) {
             self.cur_token = self.peek_token.clone();
-            self.peek_token = self.l.next_token();
+            self.peek_token = self.l.next_token().unwrap();
         }
 
         pub fn parse_program(&mut self) -> ast::Program {

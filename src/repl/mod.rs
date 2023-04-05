@@ -16,11 +16,11 @@ pub mod repl {
             if reader.read_line(&mut line).unwrap() == 0 {
                 break;
             }
-            let mut l = Lexer::new(line);
+            let mut l = Lexer::new(&line);
             loop {
                 let tok = l.next_token();
                 println!("{:?}", tok);
-                if tok.kind == TokenKind::Eof {
+                if Ok(TokenKind::Eof) == tok {
                     break;
                 }
             }
