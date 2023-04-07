@@ -32,9 +32,9 @@ pub mod parser {
             let mut program = ast::Program::new();
 
             while self.cur_token != Token::Eof {
-                let stmt = self.parse_statement();
-                if let Some(stmt) = stmt {
-                    program.statements.push(stmt);
+                match self.parse_statement() {
+                    Some(stmt) => program.statements.push(stmt),
+                    None => {}
                 }
                 self.next_token();
             }
@@ -49,13 +49,15 @@ pub mod parser {
         }
 
         fn parse_let_statement(&mut self) -> Option<Statement> {
-            let mut stmt = Let::new();
+            match self.cur_token {
+                Token::Ident(_) => self.next_token(),
+                _ => return None,
+            };
 
-            if !self.expect_peek(Token::Ident) {
-                return None;
-            }
-
-            stmt.name = ast::Identifier::new(self.cur_token.clone());
+            let name = match self.cur_token {
+                Token::Ident(s) => s,
+                _ => "".to_string(),
+            };
 
             if !self.expect_peek(Token::Assign) {
                 return None;
@@ -65,10 +67,10 @@ pub mod parser {
                 self.next_token();
             }
 
-            Some(Statement::Let(Let {
-                token: Token::Let,
-                name: ast::Identifier::new(name),
-                value: ast::Expression::Identifier(ast::Identifier::new("".to_string())),
+            Some(Statement::Let({
+                let mut l = Let::new();
+                l.name = ast::Identifier::new(name);
+                l
             }))
         }
 
@@ -99,6 +101,31 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_let_statements_small() {
+        let input: String = "let x=5;".to_string();
+
+        let l = lexer::lexer::Lexer::new(&input);
+        let mut p = parser::Parser::new(l);
+
+        let program = p.parse_program();
+
+        assert_eq!(program.statements.len(), 1);
+
+        // Decleare the expected identifiers
+        let tests: Vec<Identifier> = {
+            let mut v = Vec::new();
+            v.push(Identifier::new("x".to_string()));
+            v
+        };
+
+        for (i, tt) in tests.iter().enumerate() {
+            let stmt = &program.statements[i];
+            let stmt = Box::new(stmt);
+            assert!(test_let_statement(stmt, tt.value.clone()));
+        }
+    }
+
+    #[test]
     fn test_let_statements() {
         let input: String = " \
         let x = 5; \
@@ -107,7 +134,7 @@ mod tests {
         "
         .to_string();
 
-        let l = lexer::lexer::Lexer::new(input);
+        let l = lexer::lexer::Lexer::new(&input);
         let mut p = parser::Parser::new(l);
 
         let program = p.parse_program();

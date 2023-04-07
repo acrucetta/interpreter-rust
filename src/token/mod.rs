@@ -87,6 +87,7 @@ pub mod token {
                 '}' => Ok(Token::RBrace),
                 '<' => Ok(Token::Lt),
                 '>' => Ok(Token::Gt),
+                '\0' => Ok(Token::Eof),
                 _ => Err(format!("Unknown character: {}", value)),
             }
         }
@@ -102,6 +103,22 @@ pub mod token {
             "else" => Token::Else,
             "return" => Token::Return,
             _ => Token::Ident(ident.to_string()),
+        }
+    }
+
+    impl Token {
+        pub fn is_ident(&self) -> bool {
+            match self {
+                Token::Ident(_) => true,
+                _ => false,
+            }
+        }
+
+        pub fn is_int(&self) -> bool {
+            match self {
+                Token::Int(_) => true,
+                _ => false,
+            }
         }
     }
 }

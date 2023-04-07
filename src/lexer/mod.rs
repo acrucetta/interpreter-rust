@@ -1,7 +1,5 @@
 pub mod lexer {
 
-    use core::num;
-
     use crate::token::token::Token;
 
     pub struct Lexer {
@@ -126,10 +124,11 @@ mod lexer_tests {
         let mut l = lexer::Lexer::new(input);
         let mut data: Vec<Token> = Vec::new();
         while let Ok(tok) = l.next_token() {
-            data.push(tok);
             if tok == Token::Eof {
+                data.push(tok);
                 break;
             }
+            data.push(tok);
         }
         assert_eq!(data, tests);
     }
