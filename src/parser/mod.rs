@@ -1,14 +1,20 @@
+pub mod error;
+
 pub mod parser {
     use crate::ast::ast;
+    use crate::ast::ast::Identifier;
     use crate::ast::ast::Let;
     use crate::ast::ast::Statement;
     use crate::lexer::lexer::Lexer;
     use crate::token::token::Token;
 
+    use super::error::ParserError;
+
     pub struct Parser {
-        l: Lexer,
-        cur_token: Token,
-        peek_token: Token,
+        pub l: Lexer,
+        pub cur_token: Token,
+        pub peek_token: Token,
+        pub errors: Vec<ParserError>,
     }
 
     impl Parser {
@@ -17,10 +23,23 @@ pub mod parser {
                 l,
                 cur_token: Token::Eof,
                 peek_token: Token::Eof,
+                errors: Vec::new(),
             };
             p.next_token();
             p.next_token();
             p
+        }
+
+        pub fn errors(&self) -> Vec<ParserError> {
+            self.errors.clone()
+        }
+
+        fn peek_error(&mut self, t: &Token) {
+            let msg = format!(
+                "expected next token to be {}, got {} instead",
+                t, self.peek_token
+            );
+            self.errors.push(ParserError::new(msg));
         }
 
         fn next_token(&mut self) {
@@ -28,13 +47,27 @@ pub mod parser {
             self.peek_token = self.l.next_token().unwrap();
         }
 
+        fn error_no_identifier(&mut self) {
+            let msg = format!(
+                "expected next token to be IDENT, got {} instead",
+                self.peek_token
+            );
+            self.errors.push(ParserError::new(msg));
+        }
+
         pub fn parse_program(&mut self) -> ast::Program {
             let mut program = ast::Program::new();
 
             while self.cur_token != Token::Eof {
-                match self.parse_statement() {
-                    Some(stmt) => program.statements.push(stmt),
-                    None => {}
+                match self.cur_token {
+                    Token::Let => {
+                        let stmt = self.parse_statement();
+                        match stmt {
+                            Some(s) => program.statements.push(s),
+                            None => (),
+                        }
+                    }
+                    _ => (),
                 }
                 self.next_token();
             }
@@ -49,46 +82,49 @@ pub mod parser {
         }
 
         fn parse_let_statement(&mut self) -> Option<Statement> {
-            match self.cur_token {
-                Token::Ident(_) => self.next_token(),
-                _ => return None,
+            let ident = match self.peek_token {
+                Token::Ident(ref s) => s.clone(),
+                _ => {
+                    self.error_no_identifier();
+                    return None;
+                }
             };
+            // Consuming the IDENT token
+            self.next_token();
+            self.expect_peek(&Token::Assign);
+            self.next_token();
 
-            let name = match self.cur_token {
-                Token::Ident(s) => s,
-                _ => "".to_string(),
-            };
-
-            if !self.expect_peek(Token::Assign) {
-                return None;
-            }
-
-            while !self.cur_token_is(Token::Semicolon) {
+            while !self.cur_token_is(&Token::Semicolon) {
                 self.next_token();
             }
 
-            Some(Statement::Let({
-                let mut l = Let::new();
-                l.name = ast::Identifier::new(name);
-                l
-            }))
+            let mut let_statement = Let::new();
+            let_statement.name = Identifier::new(ident);
+            Some(Statement::Let(let_statement))
         }
 
-        fn cur_token_is(&self, t: Token) -> bool {
-            self.cur_token == t
+        fn cur_token_is(&self, t: &Token) -> bool {
+            self.cur_token == *t
         }
 
-        fn peek_token_is(&self, t: Token) -> bool {
-            self.peek_token == t
+        fn peek_token_is(&self, t: &Token) -> bool {
+            self.peek_token == *t
         }
 
-        fn expect_peek(&mut self, t: Token) -> bool {
-            if self.peek_token_is(t) {
+        fn expect_peek(&mut self, t: &Token) -> Result<(), ParserError> {
+            if self.peek_token_is(&t) {
                 self.next_token();
-                return true;
+                Ok(())
             } else {
-                return false;
+                Err(ParserError::new(format!(
+                    "expected next token to be {}, but got {} instead",
+                    t, self.peek_token
+                )))
             }
+        }
+
+        fn parse_ident(&self) -> Token {
+            todo!()
         }
     }
 }
@@ -138,6 +174,7 @@ mod tests {
         let mut p = parser::Parser::new(l);
 
         let program = p.parse_program();
+        check_parse_errors(&p);
 
         assert_eq!(program.statements.len(), 3);
 
@@ -155,6 +192,19 @@ mod tests {
             let stmt = Box::new(stmt);
             assert!(test_let_statement(stmt, tt.value.clone()));
         }
+    }
+
+    fn check_parse_errors(p: &parser::Parser) {
+        let errors = p.errors();
+        if errors.len() == 0 {
+            return;
+        }
+
+        println!("parser has {} errors", errors.len());
+        for msg in errors {
+            println!("parser error: {}", msg);
+        }
+        panic!();
     }
 
     fn test_let_statement(statement: Box<&Statement>, name: String) -> bool {
