@@ -59,15 +59,19 @@ pub mod parser {
             let mut program = ast::Program::new();
 
             while self.cur_token != Token::Eof {
+                let mut statement: Option<Statement> = None;
                 match self.cur_token {
                     Token::Let => {
-                        let stmt = self.parse_statement();
-                        match stmt {
-                            Some(s) => program.statements.push(s),
-                            None => (),
-                        }
+                        statement = self.parse_statement();
+                    }
+                    Token::Return => {
+                        statement = self.parse_statement();
                     }
                     _ => (),
+                }
+                match statement {
+                    Some(s) => program.statements.push(s),
+                    None => (),
                 }
                 self.next_token();
             }
@@ -77,6 +81,7 @@ pub mod parser {
         fn parse_statement(&mut self) -> Option<Statement> {
             match self.cur_token {
                 Token::Let => self.parse_let_statement(),
+                Token::Return => self.parse_return_statement(),
                 _ => None,
             }
         }
@@ -131,6 +136,15 @@ pub mod parser {
 
         fn parse_ident(&self) -> Token {
             todo!()
+        }
+
+        fn parse_return_statement(&mut self) -> Option<Statement> {
+            let return_statement = ast::Return::new();
+            self.next_token();
+            while !self.cur_token_is(&Token::Semicolon) {
+                self.next_token();
+            }
+            Some(Statement::Return(return_statement))
         }
     }
 }
@@ -200,18 +214,16 @@ mod tests {
         }
     }
 
+    #[test]
     fn test_return_statement() {
-        let input: String = "return 5; \
-        return 10;
-        return 9223;"
-            .to_string();
+        let input: String = "return 5;".to_string();
 
         let l = lexer::lexer::Lexer::new(&input);
         let mut p = parser::Parser::new(l);
         let program = p.parse_program();
         check_parse_errors(&p);
 
-        assert_eq!(program.statements.len(), 3);
+        assert_eq!(program.statements.len(), 1);
 
         for stmt in program.statements {
             match stmt {

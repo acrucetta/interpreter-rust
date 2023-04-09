@@ -128,6 +128,13 @@ pub mod ast {
         pub fn token_literal(&self) -> String {
             self.token.to_string()
         }
+
+        pub fn new() -> Return {
+            Return {
+                token: Token::Return,
+                return_value: Expression::Identifier(Identifier::new("".to_string())),
+            }
+        }
     }
 
     impl fmt::Display for Return {
