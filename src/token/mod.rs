@@ -39,6 +39,7 @@ pub mod token {
             match self {
                 Token::Illegal(s) => write!(f, "{}", s),
                 Token::Eof => write!(f, "EOF"),
+                Token::Return => write!(f, "return"),
                 Token::Ident(s) => write!(f, "{}", s),
                 Token::Int(i) => write!(f, "{}", i),
                 Token::Assign => write!(f, "="),
@@ -63,7 +64,6 @@ pub mod token {
                 Token::False => write!(f, "false"),
                 Token::If => write!(f, "if"),
                 Token::Else => write!(f, "else"),
-                Token::Return => write!(f, "return"),
             }
         }
     }
@@ -103,22 +103,6 @@ pub mod token {
             "else" => Token::Else,
             "return" => Token::Return,
             _ => Token::Ident(ident.to_string()),
-        }
-    }
-
-    impl Token {
-        pub fn is_ident(&self) -> bool {
-            match self {
-                Token::Ident(_) => true,
-                _ => false,
-            }
-        }
-
-        pub fn is_int(&self) -> bool {
-            match self {
-                Token::Int(_) => true,
-                _ => false,
-            }
         }
     }
 }

@@ -65,6 +65,11 @@ pub mod lexer {
             match &self.input[start_position..end_position] {
                 "fn" => Token::Function,
                 "let" => Token::Let,
+                "true" => Token::True,
+                "false" => Token::False,
+                "if" => Token::If,
+                "else" => Token::Else,
+                "return" => Token::Return,
                 ident => Token::Ident(ident.to_string()),
             }
         }
@@ -104,6 +109,24 @@ mod lexer_tests {
     use crate::token::token::Token;
 
     use super::{lexer::Lexer, *};
+
+    #[test]
+    pub fn test_return_token() {
+        let input = "return 5;";
+
+        let tests: Vec<Token> = vec![Token::Return, Token::Int(5), Token::Semicolon, Token::Eof];
+
+        let mut lexer = Lexer::new(input);
+        let mut data = Vec::new();
+        loop {
+            let token = lexer.next_token().expect("token");
+            data.push(token.clone());
+            if token == Token::Eof {
+                break;
+            }
+        }
+        assert_eq!(data, tests);
+    }
 
     #[test]
     pub fn test_next_token_small() {

@@ -61,12 +61,8 @@ pub mod parser {
             while self.cur_token != Token::Eof {
                 let mut statement: Option<Statement> = None;
                 match self.cur_token {
-                    Token::Let => {
-                        statement = self.parse_statement();
-                    }
-                    Token::Return => {
-                        statement = self.parse_statement();
-                    }
+                    Token::Let => statement = self.parse_statement(),
+                    Token::Return => statement = self.parse_statement(),
                     _ => (),
                 }
                 match statement {

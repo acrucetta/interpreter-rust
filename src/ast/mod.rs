@@ -27,13 +27,15 @@ pub mod ast {
     pub enum Statement {
         Let(Let),
         Return(Return),
+        Expr(Expr),
     }
 
     impl fmt::Display for Statement {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
             match self {
-                Statement::Let(s) => write!(f, "{}", s),
-                Statement::Return(s) => write!(f, "{}", s),
+                Statement::Let(s) => write!(f, "let {} = {};", s.name, s.value),
+                Statement::Return(s) => write!(f, "return {};", s.return_value),
+                Statement::Expr(expr) => write!(f, "{}", expr.expression),
             }
         }
     }
@@ -43,6 +45,7 @@ pub mod ast {
             match self {
                 Statement::Let(s) => s.token_literal(),
                 Statement::Return(s) => s.token_literal(),
+                Statement::Expr(s) => s.token_literal(),
             }
         }
     }
@@ -56,6 +59,14 @@ pub mod ast {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
             match self {
                 Expression::Identifier(i) => write!(f, "{}", i),
+            }
+        }
+    }
+
+    impl Expression {
+        pub fn token_literal(&self) -> String {
+            match self {
+                Expression::Identifier(i) => i.token_literal(),
             }
         }
     }
@@ -96,15 +107,7 @@ pub mod ast {
         pub value: Expression,
     }
 
-    impl fmt::Display for Let {
-        fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-            write!(f, "{} {} = {}", self.token_literal(), self.name, self.value)
-        }
-    }
-
     impl Let {
-        pub fn statement_node(&self) {}
-
         pub fn token_literal(&self) -> String {
             self.token.to_string()
         }
@@ -137,9 +140,15 @@ pub mod ast {
         }
     }
 
-    impl fmt::Display for Return {
-        fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-            write!(f, "{} {}", self.token_literal(), self.return_value)
+    #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+    pub struct Expr {
+        pub token: Token,
+        pub expression: Expression,
+    }
+
+    impl Expr {
+        pub fn token_literal(&self) -> String {
+            self.token.to_string()
         }
     }
 
@@ -156,8 +165,6 @@ pub mod ast {
     }
 
     impl Identifier {
-        pub fn expression_node() {}
-
         pub fn token_literal(&self) -> String {
             self.token.to_string()
         }
@@ -171,26 +178,29 @@ pub mod ast {
     }
 }
 
-// #[cfg(test)]
-// mod test {
-//     use super::{
-//         ast::{Let, Statement},
-//         *,
-//     };
+#[cfg(test)]
+mod test {
+    use crate::token::token::Token;
 
-//     #[test]
-//     fn display() {
-//         let p = ast::Program {
-//             statements: vec![Statement::Let(Box::new(Let {
-//                 name: "asdf".to_string(),
-//                 value: Expression::Identifier("bar".to_string()),
-//             }))],
-//         };
+    use super::{
+        ast::{Expression, Identifier, Let, Program, Statement},
+        *,
+    };
 
-//         let expected = "let asdf = bar;";
+    #[test]
+    fn display() {
+        let p = Program {
+            statements: vec![Statement::Let(Let {
+                token: Token::Let,
+                name: Identifier::new("asdf".to_string()),
+                value: Expression::Identifier(Identifier::new("bar".to_string())),
+            })],
+        };
 
-//         if p.to_string() != expected {
-//             panic!("expected {} but got {}", "foo", expected)
-//         }
-//     }
-// }
+        let expected = "let asdf = bar;";
+
+        if p.to_string() != expected {
+            panic!("expected {} but got {}", expected, p.to_string())
+        }
+    }
+}
