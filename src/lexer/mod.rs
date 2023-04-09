@@ -94,14 +94,6 @@ pub mod lexer {
             }
         }
     }
-
-    fn is_digit(ch: char) -> bool {
-        ch.is_ascii_digit()
-    }
-
-    fn is_letter(ch: char) -> bool {
-        ch.is_ascii_lowercase() || ch.is_ascii_uppercase() || ch == '_'
-    }
 }
 
 #[cfg(test)]

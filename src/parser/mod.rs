@@ -91,7 +91,7 @@ pub mod parser {
         fn parse_let_statement(&mut self) -> Result<Statement, ParserError> {
             let ident = match &self.peek_token {
                 Token::Ident(ref s) => s.clone(),
-                t => {
+                _t => {
                     return Err(self.error_no_identifier());
                 }
             };
@@ -167,6 +167,24 @@ mod tests {
             ("let y = true;", "let y = true;"),
             ("let foobar = y;", "let foobar = y;"),
         ];
+        apply_test(&test_case);
+    }
+
+    #[test]
+    fn test_return_statement() {
+        let test_case = [
+            ("return 5;", "return 5;"),
+            ("return true;", "return true;"),
+            ("return foobar;", "return foobar;"),
+        ];
+
+        apply_test(&test_case);
+    }
+
+    #[test]
+    fn test_identifier_expression() {
+        let test_case = [("foobar;", "foobar")];
+
         apply_test(&test_case);
     }
 }
