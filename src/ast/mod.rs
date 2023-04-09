@@ -1,3 +1,5 @@
+use self::ast::{Expression, Statement};
+
 pub mod ast {
 
     use core::fmt;
@@ -6,17 +8,19 @@ pub mod ast {
     use serde::{Deserialize, Serialize};
     use std::fmt::Formatter;
 
+    use super::{format_expressions, format_statements};
+
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     pub enum Node {
-        Program(Program),
+        Program(Vec<Statement>),
         Statement(Statement),
-        Identifier(Identifier),
+        Identifier(Expression),
     }
 
     impl fmt::Display for Node {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             match self {
-                Node::Program(p) => write!(f, "{}", p),
+                Node::Program(p) => write!(f, "{}", format_statements(p)),
                 Node::Statement(s) => write!(f, "{}", s),
                 Node::Identifier(i) => write!(f, "{}", i),
             }
@@ -25,182 +29,103 @@ pub mod ast {
 
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     pub enum Statement {
-        Let(Let),
-        Return(Return),
-        Expr(Expr),
+        Let(String, Expression),
+        Return(Expression),
+        Expr(Expression),
     }
 
     impl fmt::Display for Statement {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
             match self {
-                Statement::Let(s) => write!(f, "let {} = {};", s.name, s.value),
-                Statement::Return(s) => write!(f, "return {};", s.return_value),
-                Statement::Expr(expr) => write!(f, "{}", expr.expression),
-            }
-        }
-    }
-
-    impl Statement {
-        pub fn token_literal(&self) -> String {
-            match self {
-                Statement::Let(s) => s.token_literal(),
-                Statement::Return(s) => s.token_literal(),
-                Statement::Expr(s) => s.token_literal(),
+                Statement::Let(id, expr) => write!(f, "let {} = {};", id, expr),
+                Statement::Return(expr) => write!(f, "return {};", expr),
+                Statement::Expr(expr) => write!(f, "{}", expr),
             }
         }
     }
 
     #[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
     pub enum Expression {
-        Identifier(Identifier),
+        Identifier(String),
+        Lit(Literal),
+        Prefix(Token, Box<Expression>),
+        Infix(Token, Box<Expression>, Box<Expression>),
+        Postfix(Token, Box<Expression>),
     }
 
     impl fmt::Display for Expression {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
             match self {
-                Expression::Identifier(i) => write!(f, "{}", i),
+                Expression::Identifier(s) => write!(f, "{}", s),
+                Expression::Lit(l) => write!(f, "{}", l),
+                Expression::Prefix(t, e) => write!(f, "({}{})", t, e),
+                Expression::Infix(t, e1, e2) => write!(f, "({} {} {})", e1, t, e2),
+                Expression::Postfix(t, e) => write!(f, "({}{})", e, t),
             }
         }
     }
 
-    impl Expression {
-        pub fn token_literal(&self) -> String {
+    #[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
+    pub enum Literal {
+        Int(i32),
+        String(String),
+        Bool(bool),
+        Array(Vec<Expression>),
+        Hash(Vec<(Expression, Expression)>),
+    }
+
+    impl fmt::Display for Literal {
+        fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
             match self {
-                Expression::Identifier(i) => i.token_literal(),
+                Literal::Int(i) => write!(f, "{}", i),
+                Literal::String(s) => write!(f, "{}", s),
+                Literal::Bool(b) => write!(f, "{}", b),
+                Literal::Array(a) => write!(f, "[{}]", format_expressions(a)),
+                Literal::Hash(h) => {
+                    let mut result = String::new();
+                    for (k, v) in h {
+                        result.push_str(&format!("{}: {}", k, v));
+                    }
+                    write!(f, "{{{}}}", result)
+                }
             }
         }
     }
+}
 
-    #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-    pub struct Program {
-        pub statements: Vec<Statement>,
-    }
+fn format_statements(stmts: &[Statement]) -> String {
+    stmts
+        .iter()
+        .map(|stmt| stmt.to_string())
+        .collect::<Vec<String>>()
+        .join("")
+}
 
-    impl fmt::Display for Program {
-        fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-            let mut result = String::new();
-            for s in &self.statements {
-                result.push_str(&s.token_literal());
-            }
-            write!(f, "{}", result)
-        }
-    }
-
-    impl Program {
-        pub fn token_literal(&self) -> String {
-            if !self.statements.is_empty() {
-                self.statements[0].token_literal()
-            } else {
-                "".to_string()
-            }
-        }
-
-        pub fn new() -> Program {
-            Program { statements: vec![] }
-        }
-    }
-
-    #[derive(Clone, Debug, Eq, Serialize, Deserialize, Hash, PartialEq)]
-    pub struct Let {
-        pub token: Token,
-        pub name: Identifier,
-        pub value: Expression,
-    }
-
-    impl Let {
-        pub fn token_literal(&self) -> String {
-            self.token.to_string()
-        }
-
-        pub fn new() -> Let {
-            Let {
-                token: Token::Let,
-                name: Identifier::new("".to_string()),
-                value: Expression::Identifier(Identifier::new("".to_string())),
-            }
-        }
-    }
-
-    #[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
-    pub struct Return {
-        pub token: Token,
-        pub return_value: Expression,
-    }
-
-    impl Return {
-        pub fn token_literal(&self) -> String {
-            self.token.to_string()
-        }
-
-        pub fn new() -> Return {
-            Return {
-                token: Token::Return,
-                return_value: Expression::Identifier(Identifier::new("".to_string())),
-            }
-        }
-    }
-
-    #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-    pub struct Expr {
-        pub token: Token,
-        pub expression: Expression,
-    }
-
-    impl Expr {
-        pub fn token_literal(&self) -> String {
-            self.token.to_string()
-        }
-    }
-
-    #[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
-    pub struct Identifier {
-        pub token: Token,
-        pub value: String,
-    }
-
-    impl fmt::Display for Identifier {
-        fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-            write!(f, "{}", self.value)
-        }
-    }
-
-    impl Identifier {
-        pub fn token_literal(&self) -> String {
-            self.token.to_string()
-        }
-
-        pub fn new(to_string: String) -> Identifier {
-            Identifier {
-                token: Token::Ident(to_string.clone()),
-                value: to_string,
-            }
-        }
-    }
+fn format_expressions(expressions: &[Expression]) -> String {
+    expressions
+        .iter()
+        .map(|stmt| stmt.to_string())
+        .collect::<Vec<String>>()
+        .join(", ")
 }
 
 #[cfg(test)]
 mod test {
     use crate::token::token::Token;
 
-    use super::{
-        ast::{Expression, Identifier, Let, Program, Statement},
-        *,
-    };
+    use super::ast::{Expression, Statement};
 
     #[test]
     fn display() {
-        let p = Program {
-            statements: vec![Statement::Let(Let {
-                token: Token::Let,
-                name: Identifier::new("asdf".to_string()),
-                value: Expression::Identifier(Identifier::new("bar".to_string())),
-            })],
-        };
+        let p = vec![Statement::Let(
+            "asdf".to_string(),
+            Expression::Identifier("bar".to_string()),
+        )];
 
         let expected = "let asdf = bar;";
 
-        if p.to_string() != expected {
-            panic!("expected {} but got {}", expected, p.to_string())
+        for stmt in p {
+            assert_eq!(stmt.to_string(), expected);
         }
     }
 }
