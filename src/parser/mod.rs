@@ -149,8 +149,6 @@ pub mod parser {
 
 #[cfg(test)]
 mod tests {
-    use crate::{ast::ast::Statement, lexer};
-
     use super::parser::parse;
 
     fn apply_test(test_case: &[(&str, &str)]) {
@@ -163,7 +161,7 @@ mod tests {
     }
 
     #[test]
-    fn test_let_statement_refactored() {
+    fn test_let_statement() {
         let test_case = [
             ("let x = 5;", "let x = 5;"),
             ("let y = true;", "let y = true;"),
