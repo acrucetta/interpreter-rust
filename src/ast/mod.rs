@@ -26,12 +26,14 @@ pub mod ast {
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     pub enum Statement {
         Let(Let),
+        Return(Return),
     }
 
     impl fmt::Display for Statement {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
             match self {
                 Statement::Let(s) => write!(f, "{}", s),
+                Statement::Return(s) => write!(f, "{}", s),
             }
         }
     }
@@ -40,11 +42,8 @@ pub mod ast {
         pub fn token_literal(&self) -> String {
             match self {
                 Statement::Let(s) => s.token_literal(),
+                Statement::Return(s) => s.token_literal(),
             }
-        }
-
-        pub fn new() -> Statement {
-            Statement::Let(Let::new())
         }
     }
 
@@ -78,7 +77,7 @@ pub mod ast {
 
     impl Program {
         pub fn token_literal(&self) -> String {
-            if self.statements.len() > 0 {
+            if !self.statements.is_empty() {
                 self.statements[0].token_literal()
             } else {
                 "".to_string()
@@ -116,6 +115,24 @@ pub mod ast {
                 name: Identifier::new("".to_string()),
                 value: Expression::Identifier(Identifier::new("".to_string())),
             }
+        }
+    }
+
+    #[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
+    pub struct Return {
+        pub token: Token,
+        pub return_value: Expression,
+    }
+
+    impl Return {
+        pub fn token_literal(&self) -> String {
+            self.token.to_string()
+        }
+    }
+
+    impl fmt::Display for Return {
+        fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+            write!(f, "{} {}", self.token_literal(), self.return_value)
         }
     }
 

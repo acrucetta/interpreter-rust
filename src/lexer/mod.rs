@@ -19,7 +19,7 @@ pub mod lexer {
             };
             l.read_char();
 
-            return l;
+            l
         }
 
         pub fn read_char(&mut self) {
@@ -49,7 +49,7 @@ pub mod lexer {
 
         fn peek_char(&self) -> char {
             if self.read_position >= self.input.len() {
-                return 0 as char;
+                0 as char
             } else {
                 return self.input.chars().nth(self.read_position).unwrap();
             }
@@ -69,7 +69,7 @@ pub mod lexer {
             }
         }
 
-        fn skip_whitespace(&mut self) -> () {
+        fn skip_whitespace(&mut self) {
             while self.ch == ' ' || self.ch == '\t' || self.ch == '\n' || self.ch == '\r' {
                 self.read_char();
             }
@@ -91,11 +91,11 @@ pub mod lexer {
     }
 
     fn is_digit(ch: char) -> bool {
-        return '0' <= ch && ch <= '9';
+        ch.is_ascii_digit()
     }
 
     fn is_letter(ch: char) -> bool {
-        return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_';
+        ch.is_ascii_lowercase() || ch.is_ascii_uppercase() || ch == '_'
     }
 }
 

@@ -91,7 +91,13 @@ pub mod parser {
             };
             // Consuming the IDENT token
             self.next_token();
-            self.expect_peek(&Token::Assign);
+            match self.expect_peek(&Token::Assign) {
+                Ok(_) => (),
+                Err(e) => {
+                    self.errors.push(e);
+                    return None;
+                }
+            }
             self.next_token();
 
             while !self.cur_token_is(&Token::Semicolon) {
@@ -112,7 +118,7 @@ pub mod parser {
         }
 
         fn expect_peek(&mut self, t: &Token) -> Result<(), ParserError> {
-            if self.peek_token_is(&t) {
+            if self.peek_token_is(t) {
                 self.next_token();
                 Ok(())
             } else {
@@ -166,7 +172,7 @@ mod tests {
         let input: String = " \
         let x = 5; \
         let y = 10; \
-        let foobar = 838383; \
+        let 838383; \
         "
         .to_string();
 
@@ -194,9 +200,30 @@ mod tests {
         }
     }
 
+    fn test_return_statement() {
+        let input: String = "return 5; \
+        return 10;
+        return 9223;"
+            .to_string();
+
+        let l = lexer::lexer::Lexer::new(&input);
+        let mut p = parser::Parser::new(l);
+        let program = p.parse_program();
+        check_parse_errors(&p);
+
+        assert_eq!(program.statements.len(), 3);
+
+        for stmt in program.statements {
+            match stmt {
+                Statement::Return(_) => (),
+                _ => panic!("statement not a return statement"),
+            }
+        }
+    }
+
     fn check_parse_errors(p: &parser::Parser) {
         let errors = p.errors();
-        if errors.len() == 0 {
+        if errors.is_empty() {
             return;
         }
 
@@ -219,11 +246,9 @@ mod tests {
         };
 
         if let_statement.name.value != name {
-            return false;
-        } else if let_statement.name.token_literal() != name {
-            return false;
+            false
         } else {
-            return true;
+            let_statement.name.token_literal() == name
         }
     }
 }
