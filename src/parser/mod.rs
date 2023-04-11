@@ -161,17 +161,14 @@ pub mod parser {
             Ok(Statement::Expr(expr))
         }
 
-        fn parse_expression(&self, precedence: Precedence) -> Result<Expression, ParserError> {
-            let left_expr = match self.cur_token {
+        fn parse_expression(&self, _precedence: Precedence) -> Result<Expression, ParserError> {
+            match self.cur_token {
                 Token::Ident(ref id) => Ok(Expression::Identifier(id.clone())),
-                _ => {
-                    return Err(ParserError::new(format!(
-                        "no prefix parse function for {:?} found",
-                        self.cur_token
-                    )))
-                }
-            };
-            left_expr
+                _ => Err(ParserError::new(format!(
+                    "no prefix parse function for {:?} found",
+                    self.cur_token
+                ))),
+            }
         }
     }
 }
