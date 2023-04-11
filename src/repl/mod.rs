@@ -1,7 +1,7 @@
 pub mod repl {
 
     use crate::lexer::lexer::Lexer;
-    use crate::token::token::{Token};
+    use crate::token::token::Token;
     use std::io::{BufRead, Write};
 
     pub const PROMPT: &str = ">> ";

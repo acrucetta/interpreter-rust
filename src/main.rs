@@ -1,8 +1,4 @@
-mod ast;
-mod lexer;
-mod parser;
-mod repl;
-mod token;
+use interpreter_rust::repl;
 
 fn main() {
     print!("Welcome to the Monkey programming language!");
