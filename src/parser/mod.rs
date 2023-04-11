@@ -25,6 +25,16 @@ pub mod parser {
         pub errors: Vec<ParserError>,
     }
 
+    pub enum Precedence {
+        Lowest = 1,
+        Equals = 2,
+        LessGreater = 3,
+        Sum = 4,
+        Product = 5,
+        Prefix = 6,
+        Call = 7,
+    }
+
     impl Parser {
         pub fn new(l: Lexer) -> Parser {
             let mut p = Parser {
@@ -84,7 +94,7 @@ pub mod parser {
             match self.cur_token {
                 Token::Let => self.parse_let_statement(),
                 Token::Return => self.parse_return_statement(),
-                _ => Err(ParserError::new("Unknown statement".to_string())),
+                _ => self.parse_expression_statement(),
             }
         }
 
@@ -129,8 +139,8 @@ pub mod parser {
             }
         }
 
-        fn parse_ident(&self) -> Token {
-            todo!()
+        fn parse_identifier(&self) -> Expression {
+            return Expression::Identifier(self.cur_token.to_string());
         }
 
         fn parse_return_statement(&mut self) -> Result<Statement, ParserError> {
@@ -143,6 +153,20 @@ pub mod parser {
             }
 
             Ok(Statement::Return(expr))
+        }
+
+        fn parse_expression_statement(&mut self) -> Result<Statement, ParserError> {
+            let expr = self.parse_expression(Precedence::Lowest)?;
+
+            if self.peek_token_is(&Token::Semicolon) {
+                self.next_token();
+            }
+
+            Ok(Statement::Expr(expr))
+        }
+
+        fn parse_expression(&self, lowest: Precedence) -> Result<Expression, ParserError> {
+            todo!()
         }
     }
 }
