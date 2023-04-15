@@ -5,10 +5,19 @@ pub mod token {
 
     #[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
     pub enum Token {
+        // Special tokens
         Illegal(String),
         Eof,
+
+        // Identifiers
         Ident(String),
-        Int(i64),
+
+        // Literals
+        Int(i32),
+        String(String),
+        Boolean(bool),
+
+        // Operators
         Assign,
         Plus,
         Minus,
@@ -19,16 +28,18 @@ pub mod token {
         Eq,
         Lt,
         Gt,
+
+        // Delimiters
         Comma,
         Semicolon,
         LParen,
         RParen,
         LBrace,
         RBrace,
-        Function,
+
+        // Keywords
+        Fn,
         Let,
-        True,
-        False,
         If,
         Else,
         Return,
@@ -40,6 +51,8 @@ pub mod token {
                 Token::Illegal(s) => write!(f, "{}", s),
                 Token::Eof => write!(f, "EOF"),
                 Token::Return => write!(f, "return"),
+                Token::Boolean(b) => write!(f, "{}", b),
+                Token::String(s) => write!(f, "{}", s),
                 Token::Ident(s) => write!(f, "{}", s),
                 Token::Int(i) => write!(f, "{}", i),
                 Token::Assign => write!(f, "="),
@@ -58,10 +71,8 @@ pub mod token {
                 Token::RParen => write!(f, ")"),
                 Token::LBrace => write!(f, "{{"),
                 Token::RBrace => write!(f, "}}"),
-                Token::Function => write!(f, "fn"),
+                Token::Fn => write!(f, "fn"),
                 Token::Let => write!(f, "let"),
-                Token::True => write!(f, "true"),
-                Token::False => write!(f, "false"),
                 Token::If => write!(f, "if"),
                 Token::Else => write!(f, "else"),
             }
@@ -95,10 +106,8 @@ pub mod token {
 
     pub fn lookup_ident(ident: &str) -> Token {
         match ident {
-            "fn" => Token::Function,
+            "fn" => Token::Fn,
             "let" => Token::Let,
-            "true" => Token::True,
-            "false" => Token::False,
             "if" => Token::If,
             "else" => Token::Else,
             "return" => Token::Return,

@@ -111,7 +111,6 @@ fn format_expressions(expressions: &[Expression]) -> String {
 
 #[cfg(test)]
 mod test {
-    
 
     use super::ast::{Expression, Statement};
 

@@ -63,10 +63,8 @@ pub mod lexer {
                 end_position += 1;
             }
             match &self.input[start_position..end_position] {
-                "fn" => Token::Function,
+                "fn" => Token::Fn,
                 "let" => Token::Let,
-                "true" => Token::True,
-                "false" => Token::False,
                 "if" => Token::If,
                 "else" => Token::Else,
                 "return" => Token::Return,

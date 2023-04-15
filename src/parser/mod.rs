@@ -1,10 +1,13 @@
 pub mod error;
+pub mod precedence;
 
 pub mod parser {
 
     use super::error::ParserError;
     use super::error::ParserErrors;
+    use super::precedence::Precedence;
     use crate::ast::ast::Expression;
+    use crate::ast::ast::Literal;
     use crate::ast::ast::Node;
     use crate::ast::ast::Statement;
     use crate::lexer::lexer::Lexer;
@@ -23,16 +26,6 @@ pub mod parser {
         pub cur_token: Token,
         pub peek_token: Token,
         pub errors: Vec<ParserError>,
-    }
-
-    pub enum Precedence {
-        Lowest = 1,
-        Equals = 2,
-        LessGreater = 3,
-        Sum = 4,
-        Product = 5,
-        Prefix = 6,
-        Call = 7,
     }
 
     impl Parser {
@@ -164,6 +157,8 @@ pub mod parser {
         fn parse_expression(&self, _precedence: Precedence) -> Result<Expression, ParserError> {
             match self.cur_token {
                 Token::Ident(ref id) => Ok(Expression::Identifier(id.clone())),
+                Token::Int(i) => Ok(Expression::Lit(Literal::Int(i))),
+                Token::String(ref s) => Ok(Expression::Lit(Literal::String(s.clone()))),
                 _ => Err(ParserError::new(format!(
                     "no prefix parse function for {:?} found",
                     self.cur_token
@@ -210,6 +205,25 @@ mod tests {
     #[test]
     fn test_identifier_expression() {
         let test_case = [("foobar;", "foobar")];
+
+        apply_test(&test_case);
+    }
+
+    #[test]
+    fn test_integer_literal_expression() {
+        let test_case = [("5;", "5")];
+
+        apply_test(&test_case);
+    }
+
+    #[test]
+    fn test_parsing_prefix_expression() {
+        let test_case = [
+            ("!5;", "!5"),
+            ("-15;", "-15"),
+            ("!true;", "!true"),
+            ("!false;", "!false"),
+        ];
 
         apply_test(&test_case);
     }
