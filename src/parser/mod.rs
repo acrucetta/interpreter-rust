@@ -5,6 +5,7 @@ pub mod parser {
 
     use super::error::ParserError;
     use super::error::ParserErrors;
+    use super::precedence;
     use super::precedence::Precedence;
     use crate::ast::ast::Expression;
     use crate::ast::ast::Literal;
@@ -154,16 +155,77 @@ pub mod parser {
             Ok(Statement::Expr(expr))
         }
 
-        fn parse_expression(&self, _precedence: Precedence) -> Result<Expression, ParserError> {
-            match self.cur_token {
+        fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, ParserError> {
+            let mut left_expr = match self.cur_token {
+                Token::Bang | Token::Minus => self.parse_prefix_expression(),
                 Token::Ident(ref id) => Ok(Expression::Identifier(id.clone())),
                 Token::Int(i) => Ok(Expression::Lit(Literal::Int(i))),
                 Token::String(ref s) => Ok(Expression::Lit(Literal::String(s.clone()))),
+                Token::Boolean(b) => Ok(Expression::Lit(Literal::Bool(b))),
                 _ => Err(ParserError::new(format!(
                     "no prefix parse function for {:?} found",
                     self.cur_token
                 ))),
+            };
+
+            while !self.peek_token_is(&Token::Semicolon)
+                && precedence < self.next_token_precedence()
+            {
+                match self.peek_token {
+                    Token::Plus
+                    | Token::Minus
+                    | Token::Slash
+                    | Token::Asterisk
+                    | Token::Eq
+                    | Token::NotEq
+                    | Token::Lt
+                    | Token::Gt => {
+                        self.next_token();
+                        let expr = left_expr.unwrap();
+                        left_expr = self.parse_infix_expression(expr);
+                    }
+                    // Token::LBracket => {
+                    //     self.next_token();
+                    //     let expr = left_expr.unwrap();
+                    //     left_expr = self.parse_index_expression(expr);
+                    // }
+                    // Token::LParen => {
+                    //     self.next_token();
+                    //     let expr = left_expr.unwrap();
+                    //     left_expr = self.parse_call_expression(expr);
+                    // }
+                    _ => {
+                        return left_expr;
+                    }
+                }
             }
+            left_expr
+        }
+
+        fn parse_prefix_expression(&mut self) -> Result<Expression, ParserError> {
+            let prefix = self.cur_token.clone();
+            self.next_token();
+            let expr = self.parse_expression(Precedence::Prefix)?;
+            Ok(Expression::Prefix(prefix, Box::new(expr)))
+        }
+
+        fn next_token_precedence(&self) -> Precedence {
+            precedence::token_to_precedence(&self.peek_token)
+        }
+
+        fn parse_infix_expression(
+            &mut self,
+            left_expr: Expression,
+        ) -> Result<Expression, ParserError> {
+            let infix_op = self.cur_token.clone();
+            self.next_token();
+            let precedence = precedence::token_to_precedence(&infix_op);
+            let right_expr = self.parse_expression(precedence)?;
+            Ok(Expression::Infix(
+                infix_op,
+                Box::new(left_expr),
+                Box::new(right_expr),
+            ))
         }
     }
 }
@@ -219,10 +281,29 @@ mod tests {
     #[test]
     fn test_parsing_prefix_expression() {
         let test_case = [
-            ("!5;", "!5"),
-            ("-15;", "-15"),
-            ("!true;", "!true"),
-            ("!false;", "!false"),
+            ("!5;", "(!5)"),
+            ("-15;", "(-15)"),
+            ("!true;", "(!true)"),
+            ("!false;", "(!false)"),
+        ];
+
+        apply_test(&test_case);
+    }
+
+    #[test]
+    fn test_parsing_infix_expression() {
+        let test_case = [
+            ("5 + 5;", "(5 + 5)"),
+            ("5 - 5;", "(5 - 5)"),
+            ("5 * 5;", "(5 * 5)"),
+            ("5 / 5;", "(5 / 5)"),
+            ("5 > 5;", "(5 > 5)"),
+            ("5 < 5;", "(5 < 5)"),
+            ("5 == 5;", "(5 == 5)"),
+            ("5 != 5;", "(5 != 5)"),
+            ("true == true", "(true == true)"),
+            ("true != false", "(true != false)"),
+            ("false == false", "(false == false)"),
         ];
 
         apply_test(&test_case);

@@ -6,7 +6,7 @@ pub mod token {
     #[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
     pub enum Token {
         // Special tokens
-        Illegal(String),
+        Illegal,
         Eof,
 
         // Identifiers
@@ -18,16 +18,16 @@ pub mod token {
         Boolean(bool),
 
         // Operators
-        Assign,
-        Plus,
-        Minus,
-        Bang,
-        Asterisk,
-        Slash,
-        NotEq,
-        Eq,
-        Lt,
-        Gt,
+        Assign,   // =
+        Plus,     // +
+        Minus,    // -
+        Bang,     // !
+        Asterisk, // *
+        Slash,    // /
+        NotEq,    // !=
+        Eq,       // ==
+        Lt,       // <
+        Gt,       // >
 
         // Delimiters
         Comma,
@@ -36,6 +36,8 @@ pub mod token {
         RParen,
         LBrace,
         RBrace,
+        LBracket,
+        RBracket,
 
         // Keywords
         Fn,
@@ -48,7 +50,7 @@ pub mod token {
     impl fmt::Display for Token {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             match self {
-                Token::Illegal(s) => write!(f, "{}", s),
+                Token::Illegal => write!(f, "ILLEGAL"),
                 Token::Eof => write!(f, "EOF"),
                 Token::Return => write!(f, "return"),
                 Token::Boolean(b) => write!(f, "{}", b),
@@ -71,6 +73,8 @@ pub mod token {
                 Token::RParen => write!(f, ")"),
                 Token::LBrace => write!(f, "{{"),
                 Token::RBrace => write!(f, "}}"),
+                Token::LBracket => write!(f, "["),
+                Token::RBracket => write!(f, "]"),
                 Token::Fn => write!(f, "fn"),
                 Token::Let => write!(f, "let"),
                 Token::If => write!(f, "if"),

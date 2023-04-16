@@ -58,9 +58,9 @@ pub mod ast {
             match self {
                 Expression::Identifier(s) => write!(f, "{}", s),
                 Expression::Lit(l) => write!(f, "{}", l),
-                Expression::Prefix(t, e) => write!(f, "({}{})", t, e),
-                Expression::Infix(t, e1, e2) => write!(f, "({} {} {})", e1, t, e2),
-                Expression::Postfix(t, e) => write!(f, "({}{})", e, t),
+                Expression::Prefix(op, expr) => write!(f, "({}{})", op, expr),
+                Expression::Infix(op, e1, e2) => write!(f, "({} {} {})", e1, op, e2),
+                Expression::Postfix(op, e) => write!(f, "({}{})", e, op),
             }
         }
     }

@@ -33,17 +33,64 @@ pub mod lexer {
         }
 
         pub fn next_token(&mut self) -> Result<Token, String> {
+            let token: Token;
+
             self.skip_whitespace();
 
-            let token = if self.ch.is_alphabetic() {
-                self.read_keyword_or_ident()
-            } else if self.ch.is_numeric() {
-                self.read_number()
-            } else {
-                let token = self.ch.try_into()?;
-                self.read_char();
-                token
-            };
+            match self.ch {
+                '=' => {
+                    if self.peek_char() == '=' {
+                        self.read_char();
+                        token = Token::Eq;
+                    } else {
+                        token = Token::Assign;
+                    }
+                }
+                '!' => {
+                    if self.peek_char() == '=' {
+                        self.read_char();
+                        token = Token::NotEq;
+                    } else {
+                        token = Token::Bang;
+                    }
+                }
+                ';' => token = Token::Semicolon,
+                '(' => token = Token::LParen,
+                ')' => token = Token::RParen,
+                ',' => token = Token::Comma,
+                '+' => token = Token::Plus,
+                '-' => token = Token::Minus,
+                '/' => token = Token::Slash,
+                '*' => token = Token::Asterisk,
+                '<' => token = Token::Lt,
+                '>' => token = Token::Gt,
+                '{' => token = Token::LBrace,
+                '}' => token = Token::RBrace,
+                '[' => token = Token::LBracket,
+                ']' => token = Token::RBracket,
+                '\0' => token = Token::Eof,
+                '"' => {
+                    self.read_char();
+                    let start_position = self.position;
+                    let mut end_position = start_position;
+                    while self.ch != '"' {
+                        self.read_char();
+                        end_position += 1;
+                    }
+                    token = Token::String(self.input[start_position..end_position].to_string());
+                }
+                _ => {
+                    if self.ch.is_alphabetic() {
+                        return Ok(self.read_keyword_or_ident());
+                    } else if self.ch.is_numeric() {
+                        let n = self.read_number();
+                        return Ok(n);
+                    } else {
+                        return Ok(Token::Illegal);
+                    }
+                }
+            }
+            self.read_char();
             Ok(token)
         }
 
@@ -88,7 +135,7 @@ pub mod lexer {
             }
             match self.input[start_position..end_position].parse() {
                 Ok(num) => Token::Int(num),
-                Err(msg) => Token::Illegal(msg.to_string()),
+                Err(msg) => Token::Illegal,
             }
         }
     }
@@ -155,6 +202,30 @@ mod lexer_tests {
             Token::Let,
             Token::Ident("five".to_string()),
             Token::Assign,
+            Token::Int(5),
+            Token::Semicolon,
+            Token::Eof,
+        ];
+
+        let mut lexer = Lexer::new(input);
+        let mut data = Vec::new();
+        loop {
+            let token = lexer.next_token().expect("token");
+            data.push(token.clone());
+            if token == Token::Eof {
+                break;
+            }
+        }
+        assert_eq!(data, tests);
+    }
+
+    #[test]
+    fn test_eq_token() {
+        let input = "5 == 5;";
+
+        let tests: Vec<Token> = vec![
+            Token::Int(5),
+            Token::Eq,
             Token::Int(5),
             Token::Semicolon,
             Token::Eof,
