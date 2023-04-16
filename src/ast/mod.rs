@@ -10,7 +10,9 @@ pub mod ast {
 
     use super::{format_expressions, format_statements};
 
-    #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+    pub type BlockStatement = Vec<Statement>;
+
+    #[derive(Debug, Clone, PartialEq)]
     pub enum Node {
         Program(Vec<Statement>),
         Statement(Statement),
@@ -27,7 +29,7 @@ pub mod ast {
         }
     }
 
-    #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+    #[derive(Debug, Clone, PartialEq)]
     pub enum Statement {
         Let(String, Expression),
         Return(Expression),
@@ -44,13 +46,14 @@ pub mod ast {
         }
     }
 
-    #[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
+    #[derive(Debug, Clone, PartialEq)]
     pub enum Expression {
         Identifier(String),
         Lit(Literal),
         Prefix(Token, Box<Expression>),
         Infix(Token, Box<Expression>, Box<Expression>),
         Postfix(Token, Box<Expression>),
+        If(Box<Expression>, BlockStatement, Option<BlockStatement>),
     }
 
     impl fmt::Display for Expression {
@@ -61,11 +64,24 @@ pub mod ast {
                 Expression::Prefix(op, expr) => write!(f, "({}{})", op, expr),
                 Expression::Infix(op, e1, e2) => write!(f, "({} {} {})", e1, op, e2),
                 Expression::Postfix(op, e) => write!(f, "({}{})", e, op),
+                Expression::If(cond, cons, alt) => {
+                    if let Some(alt) = alt {
+                        write!(
+                            f,
+                            "if {} {{ {} }} else {{ {} }}",
+                            cond,
+                            format_statements(cons),
+                            format_statements(alt)
+                        )
+                    } else {
+                        write!(f, "if {} {{ {} }}", cond, format_statements(cons))
+                    }
+                }
             }
         }
     }
 
-    #[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
+    #[derive(Debug, Clone, PartialEq)]
     pub enum Literal {
         Int(i32),
         String(String),

@@ -7,11 +7,13 @@ pub mod parser {
     use super::error::ParserErrors;
     use super::precedence;
     use super::precedence::Precedence;
+    use crate::ast::ast::BlockStatement;
     use crate::ast::ast::Expression;
     use crate::ast::ast::Literal;
     use crate::ast::ast::Node;
     use crate::ast::ast::Statement;
     use crate::lexer::lexer::Lexer;
+    use crate::token;
     use crate::token::token::Token;
 
     pub fn parse(input: &str) -> Result<Node, ParserErrors> {
@@ -162,6 +164,13 @@ pub mod parser {
                 Token::Int(i) => Ok(Expression::Lit(Literal::Int(i))),
                 Token::String(ref s) => Ok(Expression::Lit(Literal::String(s.clone()))),
                 Token::Boolean(b) => Ok(Expression::Lit(Literal::Bool(b))),
+                Token::LParen => {
+                    self.next_token();
+                    let expr = self.parse_expression(Precedence::Lowest)?;
+                    self.expect_peek(&Token::RParen)?;
+                    Ok(expr)
+                }
+                Token::If => self.parse_if_expression(),
                 _ => Err(ParserError::new(format!(
                     "no prefix parse function for {:?} found",
                     self.cur_token
@@ -226,6 +235,29 @@ pub mod parser {
                 Box::new(left_expr),
                 Box::new(right_expr),
             ))
+        }
+
+        fn parse_if_expression(&mut self) -> Result<Expression, ParserError> {
+            self.expect_peek(&Token::LParen)?;
+            self.next_token();
+            let condition = self.parse_expression(Precedence::Lowest)?;
+            self.expect_peek(&Token::RParen)?;
+            self.expect_peek(&Token::LBrace)?;
+            let consequence = self.parse_block_statement()?;
+            Ok(Expression::If(Box::new(condition), consequence, None))
+        }
+
+        fn parse_block_statement(&mut self) -> Result<BlockStatement, ParserError> {
+            self.next_token();
+            let mut block_statement = Vec::new();
+
+            while !self.cur_token_is(&Token::RBrace) && !self.cur_token_is(&Token::Eof) {
+                if let Ok(stmt) = self.parse_statement() {
+                    block_statement.push(stmt);
+                }
+                self.next_token();
+            }
+            Ok(block_statement)
         }
     }
 }
@@ -304,6 +336,61 @@ mod tests {
             ("true == true", "(true == true)"),
             ("true != false", "(true != false)"),
             ("false == false", "(false == false)"),
+        ];
+
+        apply_test(&test_case);
+    }
+
+    #[test]
+    fn test_operator_precedence_parsing() {
+        let test_case = [
+            ("-a * b", "((-a) * b)"),
+            ("!-a", "(!(-a))"),
+            ("a + b + c", "((a + b) + c)"),
+            ("a + b - c", "((a + b) - c)"),
+            ("a * b * c", "((a * b) * c)"),
+            ("a * b / c", "((a * b) / c)"),
+            ("a + b / c", "(a + (b / c))"),
+            ("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"),
+            ("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)"),
+            ("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"),
+            ("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"),
+        ];
+        apply_test(&test_case);
+    }
+
+    #[test]
+    fn test_operator_precedence_parsing_bools() {
+        let test_case = [
+            ("true", "true"),
+            ("false", "false"),
+            ("3 > 5 == false", "((3 > 5) == false)"),
+            ("3 < 5 == true", "((3 < 5) == true)"),
+            ("true == true", "(true == true)"),
+            ("true != false", "(true != false)"),
+            ("false == false", "(false == false)"),
+        ];
+
+        apply_test(&test_case);
+    }
+
+    #[test]
+    fn test_operator_precedence_parsing_groups() {
+        let test_case = [
+            ("(5 + 5) * 2", "((5 + 5) * 2)"),
+            ("2 / (5 + 5)", "(2 / (5 + 5))"),
+            ("-(5 + 5)", "(-(5 + 5))"),
+            ("!(true == true)", "(!(true == true))"),
+        ];
+
+        apply_test(&test_case);
+    }
+
+    #[test]
+    fn test_if_expression() {
+        let test_case = [
+            ("if (x < y) { x }", "if (x < y) { x }"),
+            ("if (x < y) { x } else { y }", "if (x < y) { x } else { y }"),
         ];
 
         apply_test(&test_case);
