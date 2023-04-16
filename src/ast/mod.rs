@@ -54,6 +54,8 @@ pub mod ast {
         Infix(Token, Box<Expression>, Box<Expression>),
         Postfix(Token, Box<Expression>),
         If(Box<Expression>, BlockStatement, Option<BlockStatement>),
+        Fn(Vec<String>, BlockStatement),
+        Call(Box<Expression>, Vec<Expression>),
     }
 
     impl fmt::Display for Expression {
@@ -76,6 +78,12 @@ pub mod ast {
                     } else {
                         write!(f, "if {} {{ {} }}", cond, format_statements(cons))
                     }
+                }
+                Expression::Fn(params, _body) => {
+                    write!(f, "fn({}) {{...}}", params.join(", "))
+                }
+                Expression::Call(fn_expr, args) => {
+                    write!(f, "{}({})", fn_expr, format_expressions(args))
                 }
             }
         }

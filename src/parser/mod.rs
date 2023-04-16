@@ -39,8 +39,8 @@ pub mod parser {
                 peek_token: Token::Eof,
                 errors: Vec::new(),
             };
-            p.next_token();
-            p.next_token();
+            p.consume();
+            p.consume();
             p
         }
 
@@ -56,7 +56,7 @@ pub mod parser {
             self.errors.push(ParserError::new(msg));
         }
 
-        fn next_token(&mut self) {
+        fn consume(&mut self) {
             self.cur_token = self.peek_token.clone();
             self.peek_token = self.l.next_token().unwrap();
         }
@@ -77,7 +77,7 @@ pub mod parser {
                     Ok(stmt) => program.push(stmt),
                     Err(e) => self.errors.push(e),
                 }
-                self.next_token();
+                self.consume();
             }
             if !self.errors.is_empty() {
                 Err(self.errors.clone())
@@ -102,14 +102,14 @@ pub mod parser {
                 }
             };
             // Consuming the IDENT token
-            self.next_token();
+            self.consume();
             self.expect_peek(&Token::Assign)?;
-            self.next_token();
+            self.consume();
 
             let expr = Expression::Identifier(self.cur_token.to_string());
 
             while !self.cur_token_is(&Token::Semicolon) {
-                self.next_token();
+                self.consume();
             }
 
             Ok(Statement::Let(ident, expr))
@@ -125,7 +125,7 @@ pub mod parser {
 
         fn expect_peek(&mut self, t: &Token) -> Result<(), ParserError> {
             if self.peek_token_is(t) {
-                self.next_token();
+                self.consume();
                 Ok(())
             } else {
                 Err(ParserError::new(format!(
@@ -136,12 +136,12 @@ pub mod parser {
         }
 
         fn parse_return_statement(&mut self) -> Result<Statement, ParserError> {
-            self.next_token();
+            self.consume();
 
             let expr = Expression::Identifier(self.cur_token.to_string());
 
             while !self.cur_token_is(&Token::Semicolon) {
-                self.next_token();
+                self.consume();
             }
 
             Ok(Statement::Return(expr))
@@ -151,7 +151,7 @@ pub mod parser {
             let expr = self.parse_expression(Precedence::Lowest)?;
 
             if self.peek_token_is(&Token::Semicolon) {
-                self.next_token();
+                self.consume();
             }
 
             Ok(Statement::Expr(expr))
@@ -165,12 +165,13 @@ pub mod parser {
                 Token::String(ref s) => Ok(Expression::Lit(Literal::String(s.clone()))),
                 Token::Boolean(b) => Ok(Expression::Lit(Literal::Bool(b))),
                 Token::LParen => {
-                    self.next_token();
+                    self.consume();
                     let expr = self.parse_expression(Precedence::Lowest)?;
                     self.expect_peek(&Token::RParen)?;
                     Ok(expr)
                 }
                 Token::If => self.parse_if_expression(),
+                Token::Fn => self.parse_function_literal(),
                 _ => Err(ParserError::new(format!(
                     "no prefix parse function for {:?} found",
                     self.cur_token
@@ -189,7 +190,7 @@ pub mod parser {
                     | Token::NotEq
                     | Token::Lt
                     | Token::Gt => {
-                        self.next_token();
+                        self.consume();
                         let expr = left_expr.unwrap();
                         left_expr = self.parse_infix_expression(expr);
                     }
@@ -198,11 +199,11 @@ pub mod parser {
                     //     let expr = left_expr.unwrap();
                     //     left_expr = self.parse_index_expression(expr);
                     // }
-                    // Token::LParen => {
-                    //     self.next_token();
-                    //     let expr = left_expr.unwrap();
-                    //     left_expr = self.parse_call_expression(expr);
-                    // }
+                    Token::LParen => {
+                        self.consume();
+                        let expr = left_expr.unwrap();
+                        left_expr = self.parse_call_expression(expr);
+                    }
                     _ => {
                         return left_expr;
                     }
@@ -213,7 +214,7 @@ pub mod parser {
 
         fn parse_prefix_expression(&mut self) -> Result<Expression, ParserError> {
             let prefix = self.cur_token.clone();
-            self.next_token();
+            self.consume();
             let expr = self.parse_expression(Precedence::Prefix)?;
             Ok(Expression::Prefix(prefix, Box::new(expr)))
         }
@@ -227,7 +228,7 @@ pub mod parser {
             left_expr: Expression,
         ) -> Result<Expression, ParserError> {
             let infix_op = self.cur_token.clone();
-            self.next_token();
+            self.consume();
             let precedence = precedence::token_to_precedence(&infix_op);
             let right_expr = self.parse_expression(precedence)?;
             Ok(Expression::Infix(
@@ -239,25 +240,100 @@ pub mod parser {
 
         fn parse_if_expression(&mut self) -> Result<Expression, ParserError> {
             self.expect_peek(&Token::LParen)?;
-            self.next_token();
+            self.consume();
             let condition = self.parse_expression(Precedence::Lowest)?;
             self.expect_peek(&Token::RParen)?;
             self.expect_peek(&Token::LBrace)?;
             let consequence = self.parse_block_statement()?;
-            Ok(Expression::If(Box::new(condition), consequence, None))
+            let alternative = if self.peek_token_is(&Token::Else) {
+                self.consume();
+                self.expect_peek(&Token::LBrace)?;
+                Some(self.parse_block_statement()?)
+            } else {
+                None
+            };
+            Ok(Expression::If(
+                Box::new(condition),
+                consequence,
+                alternative,
+            ))
         }
 
         fn parse_block_statement(&mut self) -> Result<BlockStatement, ParserError> {
-            self.next_token();
+            self.consume();
             let mut block_statement = Vec::new();
 
             while !self.cur_token_is(&Token::RBrace) && !self.cur_token_is(&Token::Eof) {
                 if let Ok(stmt) = self.parse_statement() {
                     block_statement.push(stmt);
                 }
-                self.next_token();
+                self.consume();
             }
             Ok(block_statement)
+        }
+
+        fn parse_function_literal(&mut self) -> Result<Expression, ParserError> {
+            self.expect_peek(&Token::LParen)?;
+            let params = self.parse_function_parameters()?;
+            self.expect_peek(&Token::LBrace)?;
+            let body = self.parse_block_statement()?;
+            Ok(Expression::Fn(params, body))
+        }
+
+        fn parse_function_parameters(&mut self) -> Result<Vec<String>, ParserError> {
+            let mut params = Vec::new();
+            if self.peek_token_is(&Token::RParen) {
+                self.consume();
+                return Ok(params);
+            }
+            self.consume();
+
+            match &self.cur_token {
+                Token::Ident(ref id) => params.push(id.clone()),
+                _ => {
+                    return Err(ParserError::new(format!(
+                        "expected identifier, got {:?}",
+                        self.cur_token
+                    )))
+                }
+            }
+            while self.peek_token_is(&Token::Comma) {
+                self.consume();
+                self.consume();
+                match &self.cur_token {
+                    Token::Ident(ref id) => params.push(id.clone()),
+                    _ => {
+                        return Err(ParserError::new(format!(
+                            "expected identifier, got {:?}",
+                            self.cur_token
+                        )))
+                    }
+                }
+            }
+            self.expect_peek(&Token::RParen)?;
+            Ok(params)
+        }
+
+        fn parse_call_expression(&mut self, expr: Expression) -> Result<Expression, ParserError> {
+            let arguments = self.parse_call_arguments()?;
+            Ok(Expression::Call(Box::new(expr), arguments))
+        }
+
+        fn parse_call_arguments(&mut self) -> Result<Vec<Expression>, ParserError> {
+            let mut args = Vec::new();
+            if self.peek_token_is(&Token::RParen) {
+                self.consume();
+                return Ok(args);
+            }
+            self.consume();
+            args.push(self.parse_expression(Precedence::Lowest)?);
+            while self.peek_token_is(&Token::Comma) {
+                self.consume();
+                self.consume();
+                args.push(self.parse_expression(Precedence::Lowest)?);
+            }
+            self.expect_peek(&Token::RParen)?;
+            Ok(args)
         }
     }
 }
@@ -381,6 +457,15 @@ mod tests {
             ("2 / (5 + 5)", "(2 / (5 + 5))"),
             ("-(5 + 5)", "(-(5 + 5))"),
             ("!(true == true)", "(!(true == true))"),
+            ("a + add(b * c) + d", "((a + add((b * c))) + d)"),
+            (
+                "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+                "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
+            ),
+            (
+                "add(a + b + c * d / f + g)",
+                "add((((a + b) + ((c * d) / f)) + g))",
+            ),
         ];
 
         apply_test(&test_case);
@@ -392,6 +477,24 @@ mod tests {
             ("if (x < y) { x }", "if (x < y) { x }"),
             ("if (x < y) { x } else { y }", "if (x < y) { x } else { y }"),
         ];
+
+        apply_test(&test_case);
+    }
+
+    #[test]
+    fn test_function_literal_parsing() {
+        let test_case = [
+            ("fn() {}", "fn() {...}"),
+            ("fn(x) {}", "fn(x) {...}"),
+            ("fn(x, y, z) {}", "fn(x, y, z) {...}"),
+        ];
+
+        apply_test(&test_case);
+    }
+
+    #[test]
+    fn test_call_expression_parsing() {
+        let test_case = [("add(1, 2 * 3, 4 + 5);", "add(1, (2 * 3), (4 + 5))")];
 
         apply_test(&test_case);
     }
