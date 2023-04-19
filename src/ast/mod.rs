@@ -5,7 +5,7 @@ pub mod ast {
     use core::fmt;
 
     use crate::token::token::Token;
-    
+
     use std::fmt::Formatter;
 
     use super::{format_expressions, format_statements};
@@ -16,7 +16,7 @@ pub mod ast {
     pub enum Node {
         Program(Vec<Statement>),
         Statement(Statement),
-        Identifier(Expression),
+        Expr(Expression),
     }
 
     impl fmt::Display for Node {
@@ -24,7 +24,7 @@ pub mod ast {
             match self {
                 Node::Program(p) => write!(f, "{}", format_statements(p)),
                 Node::Statement(s) => write!(f, "{}", s),
-                Node::Identifier(i) => write!(f, "{}", i),
+                Node::Expr(i) => write!(f, "{}", i),
             }
         }
     }
