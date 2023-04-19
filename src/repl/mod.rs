@@ -10,8 +10,9 @@ pub mod repl {
             let readline = rl.readline(">> ");
             match readline {
                 Ok(line) => match parse(&line) {
-                    Ok(program) => {
-                        println!("{:#?}", program);
+                    Ok(node) => {
+                        let output = format!("{}", node);
+                        println!("{}", output);
                     }
                     Err(e) => {
                         for err in e {
