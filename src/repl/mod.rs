@@ -1,5 +1,8 @@
 pub mod repl {
 
+    use std::string::ParseError;
+
+    use crate::parser::error::ParserError;
     use crate::parser::parser::parse;
     use rustyline::error::ReadlineError;
     use rustyline::DefaultEditor;
@@ -15,9 +18,7 @@ pub mod repl {
                         println!("{}", output);
                     }
                     Err(e) => {
-                        for err in e {
-                            println!("{}", err);
-                        }
+                        print_parse_errors(e);
                     }
                 },
                 Err(ReadlineError::Interrupted) => {
@@ -35,5 +36,14 @@ pub mod repl {
             }
         }
         Ok(())
+    }
+
+    fn print_parse_errors(errors: Vec<ParserError>) {
+        print!(
+            "Woops! We ran into some issues parsing your input, please fix the following errors:\n"
+        );
+        for err in errors {
+            println!("{}", err);
+        }
     }
 }
