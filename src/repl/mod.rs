@@ -1,25 +1,30 @@
 pub mod repl {
 
-    use crate::lexer::lexer::Lexer;
+    use crate::parser::parser::Parser;
     use crate::token::token::Token;
+    use crate::{lexer::lexer::Lexer, parser::parser::parse};
+    use rustyline::error::ReadlineError;
+    use rustyline::Editor;
     use std::io::{BufRead, Write};
 
-    pub const PROMPT: &str = ">> ";
-
     pub fn start(reader: &mut dyn BufRead, writer: &mut dyn Write) {
+        let mut rl = Editor::<()>::new();
         loop {
-            let mut line = String::new();
-            print!("{}", PROMPT);
-            writer.flush().unwrap();
-
-            if reader.read_line(&mut line).unwrap() == 0 {
-                break;
-            }
-            let mut l = Lexer::new(&line);
-            loop {
-                let tok = l.next_token();
-                println!("{:?}", tok);
-                if Ok(Token::Eof) == tok {
+            match rl.readline(">> ") {
+                Ok(line) => {
+                    let mut lexer = Lexer::new(line);
+                    let mut parser = Parser::new(&mut lexer);
+                    let program = parser.parse_program();
+                    if parser.errors.len() > 0 {
+                        for err in parser.errors {
+                            println!("parser error: {}", err);
+                        }
+                    } else {
+                        println!("{}", program);
+                    }
+                }
+                Err(_) => {
+                    println!("Goodbye!");
                     break;
                 }
             }

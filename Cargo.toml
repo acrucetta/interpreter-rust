@@ -9,3 +9,4 @@ edition = "2021"
 downcast = "0.11.0"
 serde = { version = "1.0.130", features = ["derive", "rc"] }
 clippy = { version = "0.0.302", optional = true }
+rustyline = "11.0.0"
