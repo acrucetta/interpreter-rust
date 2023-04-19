@@ -1,10 +1,8 @@
 pub mod repl {
 
-    use crate::parser::parser::Parser;
-    use crate::token::token::Token;
-    use crate::{lexer::lexer::Lexer, parser::parser::parse};
+    use crate::parser::parser::parse;
     use rustyline::error::ReadlineError;
-    use rustyline::{DefaultEditor, Editor};
+    use rustyline::DefaultEditor;
 
     pub fn start() -> rustyline::Result<()> {
         let mut rl = DefaultEditor::new()?;

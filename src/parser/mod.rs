@@ -13,7 +13,7 @@ pub mod parser {
     use crate::ast::ast::Node;
     use crate::ast::ast::Statement;
     use crate::lexer::lexer::Lexer;
-    use crate::token;
+
     use crate::token::token::Token;
 
     pub fn parse(input: &str) -> Result<Node, ParserErrors> {
@@ -106,7 +106,7 @@ pub mod parser {
             self.expect_peek(&Token::Assign)?;
             self.consume();
 
-            let expr = Expression::Identifier(self.cur_token.to_string());
+            let expr = self.parse_expression(Precedence::Lowest)?;
 
             while !self.cur_token_is(&Token::Semicolon) {
                 self.consume();
@@ -138,7 +138,7 @@ pub mod parser {
         fn parse_return_statement(&mut self) -> Result<Statement, ParserError> {
             self.consume();
 
-            let expr = Expression::Identifier(self.cur_token.to_string());
+            let expr = self.parse_expression(Precedence::Lowest)?;
 
             while !self.cur_token_is(&Token::Semicolon) {
                 self.consume();

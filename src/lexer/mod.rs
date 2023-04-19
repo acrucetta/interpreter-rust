@@ -135,7 +135,7 @@ pub mod lexer {
             }
             match self.input[start_position..end_position].parse() {
                 Ok(num) => Token::Int(num),
-                Err(msg) => Token::Illegal,
+                Err(_msg) => Token::Illegal,
             }
         }
     }
