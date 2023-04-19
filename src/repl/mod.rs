@@ -6,9 +6,8 @@ pub mod repl {
     use rustyline::error::ReadlineError;
     use rustyline::{DefaultEditor, Editor};
 
-    pub fn start() {
+    pub fn start() -> rustyline::Result<()> {
         let mut rl = DefaultEditor::new()?;
-
         loop {
             let readline = rl.readline(">> ");
             match readline {
@@ -36,7 +35,6 @@ pub mod repl {
                 }
             }
         }
-        #[cfg(feature = "with-file-history")]
-        rl.save_history("history.txt");
+        Ok(())
     }
 }
