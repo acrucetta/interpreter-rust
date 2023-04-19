@@ -4,30 +4,39 @@ pub mod repl {
     use crate::token::token::Token;
     use crate::{lexer::lexer::Lexer, parser::parser::parse};
     use rustyline::error::ReadlineError;
-    use rustyline::Editor;
-    use std::io::{BufRead, Write};
+    use rustyline::{DefaultEditor, Editor};
 
-    pub fn start(reader: &mut dyn BufRead, writer: &mut dyn Write) {
-        let mut rl = Editor::<()>::new();
+    pub fn start() {
+        let mut rl = DefaultEditor::new()?;
+
         loop {
-            match rl.readline(">> ") {
-                Ok(line) => {
-                    let mut lexer = Lexer::new(line);
-                    let mut parser = Parser::new(&mut lexer);
-                    let program = parser.parse_program();
-                    if parser.errors.len() > 0 {
-                        for err in parser.errors {
-                            println!("parser error: {}", err);
-                        }
-                    } else {
-                        println!("{}", program);
+            let readline = rl.readline(">> ");
+            match readline {
+                Ok(line) => match parse(&line) {
+                    Ok(program) => {
+                        println!("{:#?}", program);
                     }
+                    Err(e) => {
+                        for err in e {
+                            println!("{}", err);
+                        }
+                    }
+                },
+                Err(ReadlineError::Interrupted) => {
+                    println!("CTRL-C");
+                    break;
                 }
-                Err(_) => {
-                    println!("Goodbye!");
+                Err(ReadlineError::Eof) => {
+                    println!("CTRL-D");
+                    break;
+                }
+                Err(err) => {
+                    println!("Error: {:?}", err);
                     break;
                 }
             }
         }
+        #[cfg(feature = "with-file-history")]
+        rl.save_history("history.txt");
     }
 }
