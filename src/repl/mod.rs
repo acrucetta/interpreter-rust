@@ -1,7 +1,9 @@
 pub mod repl {
 
+    use std::rc::Rc;
     use std::string::ParseError;
 
+    use crate::eval::eval;
     use crate::parser::error::ParserError;
     use crate::parser::parser::parse;
     use rustyline::error::ReadlineError;
@@ -9,14 +11,15 @@ pub mod repl {
 
     pub fn start() -> rustyline::Result<()> {
         let mut rl = DefaultEditor::new()?;
+        let env = Rc::new(Default::default());
         loop {
             let readline = rl.readline(">> ");
             match readline {
                 Ok(line) => match parse(&line) {
-                    Ok(node) => {
-                        let output = format!("{}", node);
-                        println!("{}", output);
-                    }
+                    Ok(node) => match eval(node, &Rc::clone(&env)) {
+                        Ok(evaluated) => println!("{}", evaluated),
+                        Err(e) => println!("Error: {}", e),
+                    },
                     Err(e) => {
                         print_parse_errors(e);
                     }
