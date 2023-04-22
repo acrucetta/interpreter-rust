@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use self::environment::Env;
 use self::error::*;
-use crate::ast::ast::{Expression, Node, Statement};
+use crate::ast::ast::{Expression, Literal, Node, Statement};
 use crate::object::*;
 
 pub type EvaluatorResult = Result<Rc<Object>, EvaluatorError>;
@@ -21,14 +21,31 @@ pub fn eval(node: Node, env: &Env) -> EvaluatorResult {
 
 pub fn eval_expression(expr: Expression, env: &Env) -> EvaluatorResult {
     match expr {
-        Expression::Lit(l) => todo!(),
-        Expression::Identifier(_) => todo!(),
+        Expression::Identifier(id) => eval_identifier(&id, env),
         Expression::Prefix(_, _) => todo!(),
         Expression::Infix(_, _, _) => todo!(),
         Expression::Postfix(_, _) => todo!(),
         Expression::If(_, _, _) => todo!(),
         Expression::Fn(_, _) => todo!(),
         Expression::Call(_, _) => todo!(),
+        Expression::Lit(l) => eval_literal(&l, env),
+    }
+}
+
+fn eval_literal(lit: &Literal, env: &Env) -> EvaluatorResult {
+    match lit {
+        Literal::Int(i) => Ok(Rc::new(Object::Integer(*i))),
+        Literal::String(_) => todo!(),
+        Literal::Bool(_) => todo!(),
+        Literal::Array(_) => todo!(),
+        Literal::Hash(_) => todo!(),
+    }
+}
+
+pub fn eval_identifier(id: &str, env: &Env) -> Result<Rc<Object>, EvaluatorError> {
+    match env.borrow().get(id) {
+        Some(obj) => Ok(obj),
+        None => Err(EvaluatorError::new(format!("identifier not found: {}", id))),
     }
 }
 
@@ -75,5 +92,12 @@ mod test {
                 Err(err) => panic!("Error: {:?}", err),
             }
         }
+    }
+
+    #[test]
+    fn test_integer_expression() {
+        let test_case = vec![("5", "5"), ("10", "10")];
+
+        apply_test(&test_case);
     }
 }
