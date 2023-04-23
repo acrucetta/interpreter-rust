@@ -8,6 +8,7 @@ use self::environment::Env;
 use self::error::*;
 use crate::ast::ast::{Expression, Literal, Node, Statement};
 use crate::object::*;
+use crate::token::token::Token;
 
 pub type EvaluatorResult = Result<Rc<Object>, EvaluatorError>;
 
@@ -22,13 +23,42 @@ pub fn eval(node: Node, env: &Env) -> EvaluatorResult {
 pub fn eval_expression(expr: Expression, env: &Env) -> EvaluatorResult {
     match expr {
         Expression::Identifier(id) => eval_identifier(&id, env),
-        Expression::Prefix(_, _) => todo!(),
+        Expression::Lit(l) => eval_literal(&l, env),
+        Expression::Prefix(op, expr) => {
+            let right = eval_expression(*expr, env)?;
+            eval_prefix_expression(op, &right)
+        }
         Expression::Infix(_, _, _) => todo!(),
         Expression::Postfix(_, _) => todo!(),
         Expression::If(_, _, _) => todo!(),
         Expression::Fn(_, _) => todo!(),
         Expression::Call(_, _) => todo!(),
-        Expression::Lit(l) => eval_literal(&l, env),
+    }
+}
+
+fn eval_prefix_expression(op: Token, expr: &Rc<Object>) -> EvaluatorResult {
+    match op {
+        Token::Bang => eval_bang_operator_expression(expr),
+        Token::Minus => eval_minus_prefix_operator_expression(expr),
+        _ => Err(EvaluatorError::new(format!(
+            "unknown operator: {}{}",
+            op, expr
+        ))),
+    }
+}
+
+fn eval_minus_prefix_operator_expression(expr: &Rc<Object>) -> EvaluatorResult {
+    match **expr {
+        Object::Integer(i) => Ok(Rc::new(Object::Integer(-i))),
+        _ => Err(EvaluatorError::new(format!("unknown operator: -{}", expr))),
+    }
+}
+
+fn eval_bang_operator_expression(expr: &Rc<Object>) -> EvaluatorResult {
+    match **expr {
+        Object::Boolean(b) => Ok(Rc::new(Object::Boolean(!b))),
+        Object::Null => Ok(Rc::new(Object::Boolean(true))),
+        _ => Ok(Rc::new(Object::Boolean(false))),
     }
 }
 
@@ -36,7 +66,7 @@ fn eval_literal(lit: &Literal, env: &Env) -> EvaluatorResult {
     match lit {
         Literal::Int(i) => Ok(Rc::new(Object::Integer(*i))),
         Literal::String(_) => todo!(),
-        Literal::Bool(_) => todo!(),
+        Literal::Bool(bool) => Ok(Rc::new(Object::Boolean(*bool))),
         Literal::Array(_) => todo!(),
         Literal::Hash(_) => todo!(),
     }
@@ -86,10 +116,10 @@ mod test {
         for (input, expected) in test_case {
             match parse(input) {
                 Ok(node) => match eval(node, &Rc::clone(&env)) {
-                    Ok(evaluated) => assert_eq!(evaluated.to_string(), expected.to_string()),
-                    Err(e) => panic!("Error: {}", e),
+                    Ok(evaluated) => assert_eq!(expected, &format!("{}", evaluated)),
+                    Err(err) => assert_eq!(expected, &format!("{}", err)),
                 },
-                Err(err) => panic!("Error: {:?}", err),
+                Err(err) => panic!("Parser Error: {:?}", err),
             }
         }
     }
@@ -99,5 +129,35 @@ mod test {
         let test_case = vec![("5", "5"), ("10", "10")];
 
         apply_test(&test_case);
+    }
+
+    #[test]
+    fn test_boolean_expression() {
+        let test_case = vec![
+            ("true", "true"),
+            ("false", "false"),
+            ("1 < 2", "true"),
+            ("1 > 2", "false"),
+            ("1 == 1", "true"),
+            ("1 != 1", "false"),
+            ("1 == 2", "false"),
+            ("1 != 2", "true"),
+        ];
+
+        apply_test(&test_case)
+    }
+
+    #[test]
+    fn test_bang_operator() {
+        let test_case = vec![
+            ("!true", "false"),
+            ("!false", "true"),
+            ("!5", "false"),
+            ("!!true", "true"),
+            ("!!false", "false"),
+            ("!!5", "true"),
+        ];
+
+        apply_test(&test_case)
     }
 }

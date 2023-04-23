@@ -115,6 +115,8 @@ pub mod lexer {
                 "if" => Token::If,
                 "else" => Token::Else,
                 "return" => Token::Return,
+                "true" => Token::Boolean(true),
+                "false" => Token::Boolean(false),
                 ident => Token::Ident(ident.to_string()),
             }
         }
@@ -230,6 +232,24 @@ mod lexer_tests {
             Token::Semicolon,
             Token::Eof,
         ];
+
+        let mut lexer = Lexer::new(input);
+        let mut data = Vec::new();
+        loop {
+            let token = lexer.next_token().expect("token");
+            data.push(token.clone());
+            if token == Token::Eof {
+                break;
+            }
+        }
+        assert_eq!(data, tests);
+    }
+
+    #[test]
+    fn test_boolean_expression() {
+        let input = "true;";
+
+        let tests: Vec<Token> = vec![Token::Boolean(true), Token::Semicolon, Token::Eof];
 
         let mut lexer = Lexer::new(input);
         let mut data = Vec::new();
