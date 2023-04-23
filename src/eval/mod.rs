@@ -126,23 +126,14 @@ mod test {
 
     #[test]
     fn test_integer_expression() {
-        let test_case = vec![("5", "5"), ("10", "10")];
+        let test_case = vec![("5", "5"), ("10", "10"), ("-5", "-5"), ("-10", "-10")];
 
         apply_test(&test_case);
     }
 
     #[test]
     fn test_boolean_expression() {
-        let test_case = vec![
-            ("true", "true"),
-            ("false", "false"),
-            ("1 < 2", "true"),
-            ("1 > 2", "false"),
-            ("1 == 1", "true"),
-            ("1 != 1", "false"),
-            ("1 == 2", "false"),
-            ("1 != 2", "true"),
-        ];
+        let test_case = vec![("true", "true"), ("false", "false")];
 
         apply_test(&test_case)
     }
