@@ -173,6 +173,11 @@ pub fn eval_program(program: Vec<Statement>, env: &Env) -> EvaluatorResult {
 
     for statement in program {
         result = eval_statement(&statement, &Rc::clone(env))?;
+
+        match result.as_ref() {
+            Object::ReturnValue(_) => return Ok(result),
+            _ => (),
+        }
     }
 
     Ok(result)
