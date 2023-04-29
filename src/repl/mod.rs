@@ -1,7 +1,6 @@
 pub mod repl {
 
     use std::rc::Rc;
-    
 
     use crate::eval::eval;
     use crate::parser::error::ParserError;
