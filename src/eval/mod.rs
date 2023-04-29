@@ -1,7 +1,6 @@
 pub mod environment;
 pub mod error;
 
-use std::env;
 use std::rc::Rc;
 
 use self::environment::Env;
@@ -30,8 +29,8 @@ pub fn eval(node: Node, env: &Env) -> EvaluatorResult {
 
 pub fn eval_expression(expr: &Expression, env: &Env) -> EvaluatorResult {
     match expr {
-        Expression::Identifier(id) => eval_identifier(&id, env),
-        Expression::Lit(l) => eval_literal(&l, env),
+        Expression::Identifier(id) => eval_identifier(id, env),
+        Expression::Lit(l) => eval_literal(l, env),
         Expression::Prefix(op, expr) => {
             let right = eval_expression(expr, env)?;
             eval_prefix_expression(op, &right)
@@ -141,7 +140,7 @@ fn eval_bang_operator_expression(expr: &Rc<Object>) -> EvaluatorResult {
     }
 }
 
-fn eval_literal(lit: &Literal, env: &Env) -> EvaluatorResult {
+fn eval_literal(lit: &Literal, _env: &Env) -> EvaluatorResult {
     match lit {
         Literal::Int(i) => Ok(Rc::new(Object::Integer(*i))),
         Literal::String(_) => todo!(),
@@ -165,7 +164,7 @@ pub fn eval_statement(statement: &Statement, env: &Env) -> EvaluatorResult {
             let val = eval_expression(expr, env)?;
             Ok(Rc::new(Object::ReturnValue(val)))
         }
-        Statement::Expr(expr) => eval_expression(&expr, env),
+        Statement::Expr(expr) => eval_expression(expr, env),
     }
 }
 
@@ -184,12 +183,10 @@ mod test {
     use std::cell::RefCell;
     use std::rc::Rc;
 
-    use crate::ast::ast::{Expression, Node, Statement};
-    use crate::lexer::lexer::Lexer;
-    use crate::parser::parser::{parse, Parser};
+    use crate::parser::parser::parse;
 
     use super::environment::Env;
-    use super::error::EvaluatorError;
+
     use super::eval;
 
     fn apply_test(test_case: &[(&str, &str)]) {

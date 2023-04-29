@@ -1,7 +1,7 @@
 pub mod repl {
 
     use std::rc::Rc;
-    use std::string::ParseError;
+    
 
     use crate::eval::eval;
     use crate::parser::error::ParserError;
@@ -42,8 +42,8 @@ pub mod repl {
     }
 
     fn print_parse_errors(errors: Vec<ParserError>) {
-        print!(
-            "Woops! We ran into some issues parsing your input, please fix the following errors:\n"
+        println!(
+            "Woops! We ran into some issues parsing your input, please fix the following errors:"
         );
         for err in errors {
             println!("{}", err);
