@@ -28,11 +28,41 @@ pub fn eval_expression(expr: Expression, env: &Env) -> EvaluatorResult {
             let right = eval_expression(*expr, env)?;
             eval_prefix_expression(op, &right)
         }
-        Expression::Infix(_, _, _) => todo!(),
+        Expression::Infix(op, left, right) => {
+            let left = eval_expression(*left, env)?;
+            let right = eval_expression(*right, env)?;
+            eval_infix_expression(op, &left, &right)
+        }
         Expression::Postfix(_, _) => todo!(),
         Expression::If(_, _, _) => todo!(),
         Expression::Fn(_, _) => todo!(),
         Expression::Call(_, _) => todo!(),
+    }
+}
+
+fn eval_infix_expression(op: Token, left: &Object, right: &Object) -> EvaluatorResult {
+    match (left, right) {
+        (Object::Integer(l), Object::Integer(r)) => eval_integer_infix_expression(op, *l, *r),
+        _ => Err(EvaluatorError::new(format!(
+            "type mismatch: {} {} {}",
+            left, op, right
+        ))),
+    }
+}
+
+fn eval_integer_infix_expression(op: Token, l: i32, r: i32) -> EvaluatorResult {
+    let left_val = Rc::new(Object::Integer(l));
+    let right_val = Rc::new(Object::Integer(r));
+
+    match op {
+        Token::Plus => Ok(Rc::new(Object::Integer(l + r))),
+        Token::Minus => Ok(Rc::new(Object::Integer(l - r))),
+        Token::Asterisk => Ok(Rc::new(Object::Integer(l * r))),
+        Token::Slash => Ok(Rc::new(Object::Integer(l / r))),
+        _ => Err(EvaluatorError::new(format!(
+            "unknown operator: {} {} {}",
+            left_val, op, right_val
+        ))),
     }
 }
 
