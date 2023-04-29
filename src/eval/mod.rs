@@ -12,37 +12,71 @@ use crate::token::token::Token;
 
 pub type EvaluatorResult = Result<Rc<Object>, EvaluatorError>;
 
+pub fn is_truthy(obj: &Object) -> bool {
+    match obj {
+        Object::Null => false,
+        Object::Boolean(b) => *b,
+        _ => true,
+    }
+}
+
 pub fn eval(node: Node, env: &Env) -> EvaluatorResult {
     match node {
-        Node::Expr(expr) => eval_expression(expr, env),
+        Node::Expr(expr) => eval_expression(&expr, env),
         Node::Statement(statement) => eval_statement(statement, env),
         Node::Program(program) => eval_program(program, env),
     }
 }
 
-pub fn eval_expression(expr: Expression, env: &Env) -> EvaluatorResult {
+pub fn eval_expression(expr: &Expression, env: &Env) -> EvaluatorResult {
     match expr {
         Expression::Identifier(id) => eval_identifier(&id, env),
         Expression::Lit(l) => eval_literal(&l, env),
         Expression::Prefix(op, expr) => {
-            let right = eval_expression(*expr, env)?;
+            let right = eval_expression(expr, env)?;
             eval_prefix_expression(op, &right)
         }
         Expression::Infix(op, left, right) => {
-            let left = eval_expression(*left, env)?;
-            let right = eval_expression(*right, env)?;
+            let left = eval_expression(left, env)?;
+            let right = eval_expression(right, env)?;
             eval_infix_expression(op, &left, &right)
         }
         Expression::Postfix(_, _) => todo!(),
-        Expression::If(_, _, _) => todo!(),
+        Expression::If(condition, consequence, alternative) => {
+            let condition = eval_expression(condition, &Rc::clone(env))?;
+
+            if is_truthy(&condition) {
+                eval_block_statement(consequence, env)
+            } else {
+                match alternative {
+                    Some(alt) => eval_block_statement(alt, env),
+                    None => Ok(Rc::new(Object::Null)),
+                }
+            }
+        }
         Expression::Fn(_, _) => todo!(),
         Expression::Call(_, _) => todo!(),
     }
 }
 
-fn eval_infix_expression(op: Token, left: &Object, right: &Object) -> EvaluatorResult {
+fn eval_block_statement(statements: &[Statement], env: &Env) -> EvaluatorResult {
+    let mut result = Rc::new(Object::Null);
+
+    for statement in statements {
+        let val = eval_statement(statement.clone(), env)?;
+
+        match val.as_ref() {
+            Object::ReturnValue(_) => return Ok(val),
+            _ => result = val,
+        }
+    }
+    Ok(result)
+}
+
+fn eval_infix_expression(op: &Token, left: &Object, right: &Object) -> EvaluatorResult {
     match (left, right) {
         (Object::Integer(l), Object::Integer(r)) => eval_integer_infix_expression(op, *l, *r),
+        (Object::Boolean(l), Object::Boolean(r)) => eval_boolean_infix_expression(op, *l, *r),
         _ => Err(EvaluatorError::new(format!(
             "type mismatch: {} {} {}",
             left, op, right
@@ -50,7 +84,18 @@ fn eval_infix_expression(op: Token, left: &Object, right: &Object) -> EvaluatorR
     }
 }
 
-fn eval_integer_infix_expression(op: Token, l: i32, r: i32) -> EvaluatorResult {
+fn eval_boolean_infix_expression(op: &Token, l: bool, r: bool) -> EvaluatorResult {
+    match op {
+        Token::Eq => Ok(Rc::new(Object::Boolean(l == r))),
+        Token::NotEq => Ok(Rc::new(Object::Boolean(l != r))),
+        _ => Err(EvaluatorError::new(format!(
+            "unknown operator: {} {} {}",
+            l, op, r
+        ))),
+    }
+}
+
+fn eval_integer_infix_expression(op: &Token, l: i32, r: i32) -> EvaluatorResult {
     let left_val = Rc::new(Object::Integer(l));
     let right_val = Rc::new(Object::Integer(r));
 
@@ -59,6 +104,10 @@ fn eval_integer_infix_expression(op: Token, l: i32, r: i32) -> EvaluatorResult {
         Token::Minus => Ok(Rc::new(Object::Integer(l - r))),
         Token::Asterisk => Ok(Rc::new(Object::Integer(l * r))),
         Token::Slash => Ok(Rc::new(Object::Integer(l / r))),
+        Token::Lt => Ok(Rc::new(Object::Boolean(l < r))),
+        Token::Gt => Ok(Rc::new(Object::Boolean(l > r))),
+        Token::Eq => Ok(Rc::new(Object::Boolean(l == r))),
+        Token::NotEq => Ok(Rc::new(Object::Boolean(l != r))),
         _ => Err(EvaluatorError::new(format!(
             "unknown operator: {} {} {}",
             left_val, op, right_val
@@ -66,7 +115,7 @@ fn eval_integer_infix_expression(op: Token, l: i32, r: i32) -> EvaluatorResult {
     }
 }
 
-fn eval_prefix_expression(op: Token, expr: &Rc<Object>) -> EvaluatorResult {
+fn eval_prefix_expression(op: &Token, expr: &Rc<Object>) -> EvaluatorResult {
     match op {
         Token::Bang => eval_bang_operator_expression(expr),
         Token::Minus => eval_minus_prefix_operator_expression(expr),
@@ -113,7 +162,7 @@ pub fn eval_statement(statement: Statement, env: &Env) -> EvaluatorResult {
     match statement {
         Statement::Let(_, _) => todo!(),
         Statement::Return(_) => todo!(),
-        Statement::Expr(expr) => eval_expression(expr, env),
+        Statement::Expr(expr) => eval_expression(&expr, env),
     }
 }
 
@@ -156,14 +205,41 @@ mod test {
 
     #[test]
     fn test_integer_expression() {
-        let test_case = vec![("5", "5"), ("10", "10"), ("-5", "-5"), ("-10", "-10")];
+        let test_case = vec![
+            ("5", "5"),
+            ("10", "10"),
+            ("-5", "-5"),
+            ("-10", "-10"),
+            ("5+5", "10"),
+            ("10+20", "30"),
+        ];
 
         apply_test(&test_case);
     }
 
     #[test]
     fn test_boolean_expression() {
-        let test_case = vec![("true", "true"), ("false", "false")];
+        let test_case = vec![
+            ("true", "true"),
+            ("false", "false"),
+            ("1 < 2", "true"),
+            ("1<1", "false"),
+        ];
+
+        apply_test(&test_case)
+    }
+
+    #[test]
+    fn test_if_else_expressions() {
+        let test_case = vec![
+            ("if (true) { 10 }", "10"),
+            ("if (false) { 10 }", "null"),
+            ("if (1) { 10 }", "10"),
+            ("if (1 < 2) { 10 }", "10"),
+            ("if (1 > 2) { 10 }", "null"),
+            ("if (1 > 2) { 10 } else { 20 }", "20"),
+            ("if (1 < 2) { 10 } else { 20 }", "10"),
+        ];
 
         apply_test(&test_case)
     }
