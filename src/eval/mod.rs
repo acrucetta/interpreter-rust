@@ -23,7 +23,7 @@ pub fn is_truthy(obj: &Object) -> bool {
 pub fn eval(node: Node, env: &Env) -> EvaluatorResult {
     match node {
         Node::Expr(expr) => eval_expression(&expr, env),
-        Node::Statement(statement) => eval_statement(statement, env),
+        Node::Statement(statement) => eval_statement(&statement, env),
         Node::Program(program) => eval_program(program, env),
     }
 }
@@ -63,7 +63,7 @@ fn eval_block_statement(statements: &[Statement], env: &Env) -> EvaluatorResult 
     let mut result = Rc::new(Object::Null);
 
     for statement in statements {
-        let val = eval_statement(statement.clone(), env)?;
+        let val = eval_statement(statement, env)?;
 
         match val.as_ref() {
             Object::ReturnValue(_) => return Ok(val),
@@ -158,10 +158,13 @@ pub fn eval_identifier(id: &str, env: &Env) -> Result<Rc<Object>, EvaluatorError
     }
 }
 
-pub fn eval_statement(statement: Statement, env: &Env) -> EvaluatorResult {
+pub fn eval_statement(statement: &Statement, env: &Env) -> EvaluatorResult {
     match statement {
         Statement::Let(_, _) => todo!(),
-        Statement::Return(_) => todo!(),
+        Statement::Return(expr) => {
+            let val = eval_expression(expr, env)?;
+            Ok(Rc::new(Object::ReturnValue(val)))
+        }
         Statement::Expr(expr) => eval_expression(&expr, env),
     }
 }
@@ -170,7 +173,7 @@ pub fn eval_program(program: Vec<Statement>, env: &Env) -> EvaluatorResult {
     let mut result = Rc::new(Object::Null);
 
     for statement in program {
-        result = eval_statement(statement, &Rc::clone(env))?;
+        result = eval_statement(&statement, &Rc::clone(env))?;
     }
 
     Ok(result)
@@ -253,6 +256,18 @@ mod test {
             ("!!true", "true"),
             ("!!false", "false"),
             ("!!5", "true"),
+        ];
+
+        apply_test(&test_case)
+    }
+
+    #[test]
+    fn test_return_statements() {
+        let test_case = vec![
+            ("return 10;", "10"),
+            ("return 10; 9;", "10"),
+            ("return 2 * 5; 9;", "10"),
+            ("9; return 2 * 5; 9;", "10"),
         ];
 
         apply_test(&test_case)

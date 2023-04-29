@@ -1,11 +1,12 @@
 use core::fmt;
+use std::rc::Rc;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Object {
     Integer(i32),
     Boolean(bool),
     Null,
-    ReturnValue(Box<Object>),
+    ReturnValue(Rc<Object>),
     Error(String),
 }
 
