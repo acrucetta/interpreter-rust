@@ -5,6 +5,7 @@ use std::rc::Rc;
 pub enum Object {
     Integer(i32),
     Boolean(bool),
+    String(String),
     Null,
     ReturnValue(Rc<Object>),
     Error(String),
@@ -18,6 +19,7 @@ impl fmt::Display for Object {
             Object::Null => write!(f, "null"),
             Object::ReturnValue(obj) => write!(f, "{}", obj),
             Object::Error(e) => write!(f, "Error: {}", e),
+            Object::String(s) => write!(f, "{}", s),
         }
     }
 }

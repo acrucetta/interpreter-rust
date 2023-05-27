@@ -76,11 +76,29 @@ fn eval_infix_expression(op: &Token, left: &Object, right: &Object) -> Evaluator
     match (left, right) {
         (Object::Integer(l), Object::Integer(r)) => eval_integer_infix_expression(op, *l, *r),
         (Object::Boolean(l), Object::Boolean(r)) => eval_boolean_infix_expression(op, *l, *r),
+        (Object::String(l), Object::String(r)) => {
+            eval_string_infix_expression(op, l.to_string(), r)
+        }
         _ => Err(EvaluatorError::new(format!(
             "type mismatch: {} {} {}",
             left, op, right
         ))),
     }
+}
+
+fn eval_string_infix_expression(op: &Token, l: String, r: &str) -> EvaluatorResult {
+    let result = match op {
+        Token::Eq => Object::Boolean(l == r),
+        Token::NotEq => Object::Boolean(l != r),
+        Token::Plus => Object::String(l + r),
+        op => {
+            return Err(EvaluatorError::new(format!(
+                "unknown operator: {} {} {}",
+                l, op, r
+            )))
+        }
+    };
+    Ok(Rc::new(result))
 }
 
 fn eval_boolean_infix_expression(op: &Token, l: bool, r: bool) -> EvaluatorResult {
@@ -143,7 +161,7 @@ fn eval_bang_operator_expression(expr: &Rc<Object>) -> EvaluatorResult {
 fn eval_literal(lit: &Literal, _env: &Env) -> EvaluatorResult {
     match lit {
         Literal::Int(i) => Ok(Rc::new(Object::Integer(*i))),
-        Literal::String(_) => todo!(),
+        Literal::String(_) => Ok(Rc::new(Object::String(lit.to_string()))),
         Literal::Bool(bool) => Ok(Rc::new(Object::Boolean(*bool))),
         Literal::Array(_) => todo!(),
         Literal::Hash(_) => todo!(),
@@ -273,5 +291,22 @@ mod test {
         ];
 
         apply_test(&test_case)
+    }
+
+    #[test]
+    fn test_error_handling() {
+        let test_case = [
+            ("5 + true;", "type mismatch: 5 + true"),
+            ("5 + true; 5;", "type mismatch: 5 + true"),
+            ("-true", "unknown operator: -true"),
+            ("true + false;", "unknown operator: true + false"),
+            (
+                "true + false + true + false;",
+                "unknown operator: true + false",
+            ),
+            ("5; true + false; 5", "unknown operator: true + false"),
+            (r#""Hello" - "World""#, "unknown operator: Hello - World"),
+        ];
+        apply_test(&test_case);
     }
 }
